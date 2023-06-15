@@ -101,9 +101,9 @@ switch taskFlag
 end
 
 %% SCREENING Stats
-paramsSC.doPlot = 1; % params used later during plotting
-paramsSC.plotAlways = 1;
-paramsSC.exportFig = 1;
+paramsSC.doPlot = 0; % params used later during plotting
+paramsSC.plotAlways = 0;
+paramsSC.exportFig = 0;
 paramsSC.rateFilter = []; % Rate filter in Hz
 paramsSC.runParallel = 0;
 paramsSC.figOut = [paths.figOut fs 'stats_screening_test_out'];
@@ -112,9 +112,9 @@ if any(taskFlag == [1,3]) && calcSelective
 end
 
 %% STERNBERG Stats
-paramsSB.doPlot = 1;  % params used later during plotting
-paramsSB.plotAlways = 1;
-paramsSB.exportFig = 1;
+paramsSB.doPlot = 0;  % params used later during plotting
+paramsSB.plotAlways = 0;
+paramsSB.exportFig = 0;
 paramsSB.rateFilter = []; % Rate filter in Hz
 paramsSB.runParallel = 0;
 paramsSB.figOut = [paths.figOut fs 'stats_sternberg_test_out'];
