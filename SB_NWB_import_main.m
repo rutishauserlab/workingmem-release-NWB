@@ -5,6 +5,9 @@
 % - SU selectivity metrics (SB)
 % - SU selectivity metrics (SC)
 %
+% SB refers to sternberg main task, and SC to sternberg screen task
+% throughout.
+%
 % Michael Kyzar 4/5/2023
 
 % NOTE: Being used for main analysis. For QA metrics, see QA_graphs.mat
@@ -21,23 +24,31 @@ taskFlag = 3;
 % importRange = 1:2; % subject IDs for dataset. Empty defaults to all available subjects.
 % importRange = 6:19; % K2017 dataset
 % importRange = 1:20; % K2020 dataset
-% importRange = 1:21; % Full Dataset
-importRange = 20; % Testing set. 
+ importRange = 1:21; % Full Dataset
+%importRange = 20; % Testing set. 
 
 calcSelective = 1;
 calcMetrics = 1;
 
 
 %% Initializing and pathing
-paths.baseData = 'Z:\LabUsers\kyzarm\data\NWB_SB\data_NWB'; % Dataset directory
 
+%paths.baseData = 'N:\LabUsers\kyzarm\data\NWB_SB\data_NWB'; % Dataset directory
 % paths.nwb_sb = [paths.baseData fs 'STERNBERG']; % Native Directory
 % paths.nwb_sc = [paths.baseData fs 'SCREENING']; % Native Directory
-paths.nwb_sb = 'Z:\LabUsers\kyzarm\data\NWB_SB\data_Dandiset\000469'; % Dandiset testing
-paths.nwb_sc = 'Z:\LabUsers\kyzarm\data\NWB_SB\data_Dandiset\000469'; % Dandiset testing
-paths.code = 'C:\svnwork\neuro1\code\events\Sternberg\NWB-SB\NWB_SB_import_release';
+
+%paths.nwb_sb = 'N:\LabUsers\kyzarm\data\NWB_SB\data_Dandiset\000469'; % Dandiset testing
+%paths.nwb_sc = 'N:\LabUsers\kyzarm\data\NWB_SB\data_Dandiset\000469'; % Dandiset testing
+
+%to download: dandi download https://dandiarchive.org/dandiset/000469/draft
+paths.nwb_sb = 'C:\data\000469'; % Dandiset testing
+paths.nwb_sc = 'C:\data\000469'; % Dandiset testing
+
+% Paths to code
+%paths.code = 'C:\svnwork\neuro1\code\events\Sternberg\NWB-SB\NWB_SB_import_release';
 paths.matnwb = 'C:\svnwork\matnwb-2.6.0.2';
-paths.figOut = ['Z:\LabUsers\kyzarm\data\NWB_SB' fs 'figures'];
+
+paths.figOut = ['C:\temp\NWB_SB' fs 'figures'];
 
 % Helpers
 if(~isdeployed) 
@@ -100,8 +111,8 @@ switch taskFlag
         error('Task flag not properly specified')
 end
 
-%% SCREENING Stats
-paramsSC.doPlot = 0; % params used later during plotting
+%% SCREENING Stats. Loops over all cells.
+paramsSC.doPlot = 0; % if =1, plot significant cells. 
 paramsSC.plotAlways = 0;
 paramsSC.exportFig = 0;
 paramsSC.rateFilter = []; % Rate filter in Hz
@@ -111,8 +122,8 @@ if any(taskFlag == [1,3]) && calcSelective
     [sig_cells_sc, areas_sc] = NWB_calcSelective_SC(nwbAll_sc,all_units_sc,paramsSC);
 end
 
-%% STERNBERG Stats
-paramsSB.doPlot = 0;  % params used later during plotting
+%% STERNBERG Stats. Loops over all cells.
+paramsSB.doPlot = 1;  % if =1, plot significant cells. 
 paramsSB.plotAlways = 0;
 paramsSB.exportFig = 0;
 paramsSB.rateFilter = []; % Rate filter in Hz
@@ -121,6 +132,24 @@ paramsSB.figOut = [paths.figOut fs 'stats_sternberg_test_out'];
 if any(taskFlag == [2,3]) && calcSelective
     [sig_cells_sb, areas_sb] = NWB_calcSelective_SB(nwbAll_sb,all_units_sb,paramsSB);
 end
+
+%% Plot specific example cells shown in paper (Sternberg task)
+% This ection plots example cells shown in the papers about this dataset (Sternberg task part)
+
+% Kaminski 2017, Fig. 3A
+%NWB_plotCell_SternbergMaintask(...)
+    
+% Kaminski 2017, Fig. 3B
+% Kaminski 2020, Fig. 1E-G
+% Kyzar et al 2023, Fig. XX
+
+%% Plot specific example cells shown in paper (Screening task)
+% This ection plots example cells shown in the papers about this dataset (Screening task part)
+
+% Kaminski 2017, Fig. S1A,  top
+%NWB_plotCell_SternbergScreenin(...)
+
+% Kyzar et al 2023, Fig. XX
 
 %% Metric Notes
 %{
@@ -168,15 +197,16 @@ if taskFlag == 3 && plotAreas
     ];
     
     fig = figure();
-    tiledlayout('vertical')
-    
-    nexttile
+    %tiledlayout('vertical')
+    subplot(2,2,1);
+    %nexttile
     pie(sb_areaCount_all, sb_labels_tot)
     title('SB: ' + label_sb)
     ax = gca();
     ax.Colormap = colormap;
 
-    nexttile
+    subplot(2,2,2);
+    %nexttile
     pie(sc_areaCount_all,sc_labels_tot)
     title('SC: ' + label_sc)
     ax = gca();
