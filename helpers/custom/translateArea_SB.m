@@ -28,9 +28,9 @@ if ~isempty(areaCode) && isempty(areaLabel) % Convert area codes to labels
         case 8
             areaLabel= 'pre_supplementary_motor_area_left';
         case 12
-            areaLabel = 'orbitofrontal_cortex_left';
+            areaLabel = 'ventral_medial_prefrontal_cortex_left';
         case 13
-            areaLabel = 'orbitofrontal_cortex_right';
+            areaLabel = 'ventral_medial_prefrontal_cortex_right';
         case 0
             areaLabel= 'TBD';
         otherwise
@@ -56,9 +56,9 @@ if isempty(areaCode) && ~isempty(areaLabel) && condenseFlag == 0 % Convert label
             areaCode=7;
         case 'pre_supplementary_motor_area_left'
             areaCode=8;
-        case 'orbitofrontal_cortex_left'
+        case 'ventral_medial_prefrontal_cortex_left'
             areaCode=12;
-        case 'orbitofrontal_cortex_right'
+        case 'ventral_medial_prefrontal_cortex_right'
             areaCode=13;
         otherwise
             warning(['Label cannot be mapped, assigning NaN: ' areaLabel]);
@@ -75,7 +75,7 @@ if isempty(areaCode) && ~isempty(areaLabel) && condenseFlag == 1 % Condense labe
             areaLabel='dACC';
         case {'pre_supplementary_motor_area_right','pre_supplementary_motor_area_left'}
             areaLabel='pre-SMA';
-        case {'orbitofrontal_cortex_left','orbitofrontal_cortex_right'}
+        case {'ventral_medial_prefrontal_cortex_left','ventral_medial_prefrontal_cortex_right'}
             areaLabel= 'OFC';
         otherwise
             warning(['Label cannot be mapped, assigning NaN: ' areaLabel]);
