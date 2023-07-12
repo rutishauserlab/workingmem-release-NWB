@@ -8,6 +8,7 @@
 ## Introduction
 
 [Neurodata Without Borders](https://www.nwb.org/)
+
 [NWB Format Specification](https://nwb-schema.readthedocs.io/en/latest/index.html)
 
 Abstract:
