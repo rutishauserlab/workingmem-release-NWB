@@ -21,6 +21,7 @@ function [axRaster,axPSTH]=plotSpikeRaster_multiple_simplified( plotMode, offset
 %binsizePSTH = 250; % bin size for PSTH
 axRaster=[];
 axPSTH=[];
+marker_color = [0 0 0];
 
 spikesToPlot_all=[];
 for alignPointsId=1:length(periods_all)
@@ -39,25 +40,56 @@ end
 
 spikesToPlot_multiple = plotSpikeRaster_multiple(  spikesToPlot_all, offsets, limitRange_forRaster  );
         
-if plotMode==1 || plotMode==3
-    %Raster
-
+if plotMode==1 || plotMode==3 % Raster
     axRaster = subplot( subplot_Raster(1), subplot_Raster(2), subplot_Raster(3:end) );
     
-    plotSpikeRasterMain( spikesToPlot_multiple, 'colortill', colortill1, 'colors', spikePlotParams.colors1, 'range', [1:nrTrialsTot1], 'spikeheight', spikePlotParams.spikeheight, 'spikewidth', spikePlotParams.spikewidth );
-    h=plotTrialMarkers( markerPos, [0.7 0.7 0.7],[], 1 );
+    plotSpikeRasterMain( spikesToPlot_multiple, 'colortill', colortill1, 'colors', spikePlotParams.colors, 'range', [1:nrTrialsTot1], 'spikeheight', spikePlotParams.spikeheight, 'spikewidth', spikePlotParams.spikewidth );
+    
+    if spikePlotParams.plotMarkerPos == 1
+        h=plotTrialMarkers( markerPos, marker_color,[], 1 );
+    end
+    xticks(markerPos)
+    true_ticks = markerPos - min(markerPos);
+    tick_labels = arrayfun(@num2str,true_ticks,'UniformOutput',false);
+    xticklabels(tick_labels)
+
+
+    if spikePlotParams.trimPadding == 1 % Trimming padding added earlier to remove gaussian smoothing artifacts. 
+        padding = spikePlotParams.padding;
+        trim_limit = [limitRange_forRaster(1) + padding limitRange_forRaster(2) - padding];
+        xlim(trim_limit)
+    else
+        xlim(limitRange_forRaster)
+    end
+
     ylabel('trial nr (re-sorted)');
+    
 end
 
-if plotMode==2 || plotMode==3
-    %PSTH
+if plotMode==2 || plotMode==3 % PSTH
     axPSTH = subplot( subplot_PSTH(1), subplot_PSTH(2), subplot_PSTH(3:end) );
 
     triallengthCombined=limitRange_forPSTH(end);
-%  spikesToPlot, timeRangesToPlot, binsize, triallength, grpRanges, plotMode,colors, smoothKernelWidth, timeRangesToSmooth, smoothMethod 
+    % Args: spikesToPlot, timeRangesToPlot, binsize, triallength, grpRanges, plotMode,colors, smoothKernelWidth, timeRangesToSmooth, smoothMethod 
     plotModePSTH=2; %1 raw, 2 smooth
-    [~,hs_raster]  = plotPSTH_forSpikeRaster( spikesToPlot_multiple, limitRange_forPSTH, spikePlotParams.binsizePSTH, triallengthCombined, colortill1, plotModePSTH, spikePlotParams.colors1, spikePlotParams.smoothKernelWidth );
-    h=plotTrialMarkers( markerPos, [0.7 0.7 0.7],[],1 );
+    [~,hs_raster]  = plotPSTH_forSpikeRaster( spikesToPlot_multiple, limitRange_forPSTH, spikePlotParams.binsizePSTH, triallengthCombined, colortill1, plotModePSTH, spikePlotParams.colors, spikePlotParams.smoothKernelWidth );
+    
+    if spikePlotParams.plotMarkerPos == 1
+        h=plotTrialMarkers( markerPos, marker_color,[],1 );
+    end
+    xticks(markerPos)
+    true_ticks = markerPos - min(markerPos);
+    tick_labels = arrayfun(@num2str,true_ticks,'UniformOutput',false);
+    xticklabels(tick_labels)
+    
+    if spikePlotParams.trimPadding == 1
+        padding = spikePlotParams.padding;
+        trim_limit = [limitRange_forPSTH(1) + padding limitRange_forPSTH(2) - padding];
+        xlim(trim_limit)
+    else
+        xlim(limitRange_forPSTH)
+    end
+
     legend(hs_raster, grpStrs, 'Location', 'SouthEast' );
 end
 

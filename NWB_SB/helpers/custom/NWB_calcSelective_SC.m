@@ -30,7 +30,7 @@ if isfield(params,'runParallel') && params.runParallel == 1 % Setting to serial 
 else
     parforArg = 0;
 end
-for i = 1:length(all_units)%, parforArg)
+for i = 1:length(all_units)%, parforArg) % Parallel currently disabled. 
     SU = all_units(i);
     subject_id = SU.subject_id;
     clusterID = nwbAll{SU.session_count}.units.vectordata.get('clusterID_orig').data.load(SU.unit_id);
@@ -68,8 +68,6 @@ for i = 1:length(all_units)%, parforArg)
         semResp(k) = stdResp(k)/sqrt(length(stimRates));
     end
     
-    
-    
     idMaxHz = idUnique(find(mResp==max(mResp),1)); % Find the first entry where the max value is reached. 
     id_Trial_maxOnly = [stim.id]; id_Trial_maxOnly([stim.id]~=idMaxHz) = -1;
 
@@ -90,11 +88,16 @@ for i = 1:length(all_units)%, parforArg)
     % p_permTest = permutationTest(a,b,2000);
 
     % Plotting Histogram & Selective Image
-    isTuned = (p_ANOVA<alphaLim); % &&(p_bANOVA<alphaLim);
+    isTuned = sig_cells_sc(i);
     if (isTuned && params.doPlot) || params.plotAlways
-        
+        pTitleStr = ['sub-' num2str(subject_id) '-ses-1'...
+            ' | BA: ' strrep(brain_area{:},'_',' ') ...
+            ' | Cell: ' num2str(SU.unit_id) ...
+            ' | Elec: ' num2str(SU.electrodes) ...
+            ' | p1=' sprintf('%.2f',p_ANOVA) ...
+            ' | p2=' sprintf('%.2f',p_bANOVA)];
         % Bar Plot w/ Error Bars
-        figure()
+        figure('Name',pTitleStr)
         subplot(1,7,1:5)
         collapseID = 1; % Whether to collapse the histogram to not consider pic ID in the x axis, rather the picture itself. Used for debugging
         if collapseID
@@ -102,7 +105,7 @@ for i = 1:length(all_units)%, parforArg)
         else
             idPlot = idUnique; %#ok<UNRCH>
         end
-        bar(idPlot,mResp)
+        bar_h = bar(idPlot,mResp);
         
         hold on
         er = errorbar(idPlot,mResp,semResp,semResp);
@@ -111,8 +114,8 @@ for i = 1:length(all_units)%, parforArg)
         
         hold off
         xlabel('Picture ID')
-        ylabel('Image Rate (Hz)')
-        
+        ylabel('Firing Rate (Hz)')
+        title(pTitleStr)
         if collapseID
             tickLabels = num2cell(idUnique); tickLabels = cellfun(@(x) num2str(x),tickLabels,'UniformOutput',false);
             xticks(idPlot)
@@ -120,25 +123,35 @@ for i = 1:length(all_units)%, parforArg)
             h=gca; h.XAxis.TickLength = [0 0];
         end
 
-        
-        
-
         % Getting Selective Image
         idPrefImg = idMaxHz; % Index in StimulusTemplates at which the preferred image occurs. 
+        
+        % Adding markers to max firing rate entry
+        
+        ast_height_factor = 1.05;
+        find_max_idPlot = idPlot(find(mResp==max(mResp),1));
+        ast_height = (mResp(find_max_idPlot) + semResp(find_max_idPlot))*ast_height_factor;
+        if isTuned
+            % Adding asterisk
+            text(idPlot(find_max_idPlot),ast_height,'\bf*','FontSize',13);
+        end
+        % Color selective bar
+        bar_h.FaceColor = 'flat';
+        bar_h.CData(idPlot(find_max_idPlot),:) = [1 0 0];
+        ylim([0 ast_height*1.1])
+
         current_session = all_units(i).session_count;
         StimulusTemplates = nwbAll{current_session}.stimulus_templates.get('StimulusTemplates') ;
        
+
         prefPath = ['image_' num2str(idPrefImg)];
-        % prefPathUnstripped = StimulusTemplates.order_of_images.data(indPrefImg).path; % Loading raw path
-        % stripPrepPath = split(prefPathUnstripped,'/'); % Stripping fileseps
-        % prefPath = stripPrepPath{end}; % Grabbing final entry
-        
         prefImgload = StimulusTemplates.image.get(prefPath).data.load; % Loading using the key from order_of_images. 
         prefImg = permute(prefImgload,[2,3,1]); % Permuting for matlab compatibility
         
         % Plotting preferred image
         subplot(1,7,6)
         image(prefImg);
+        xlabel(strrep(prefPath,'_',' '))
         
         % pbaspect([4 3 1])
         set(gca,'YTick',[])
@@ -147,16 +160,25 @@ for i = 1:length(all_units)%, parforArg)
         % % Plotting waveforms PDF. 
         subplot(1,7,7)
         waveforms = SU.waveforms;
-        [D,AMPs]=spikePDFestimate(waveforms);
+        if size(waveforms,1) > 1 % Plot spike pdf
+            [~,~] = spikePDFestimate(waveforms);
+        else % Only plot mean waveform if that's the only waveform available. 
+            plot(waveforms)
+            xlim([0 length(waveforms)])
+            ylim([min(waveforms)*1.2 max(waveforms)*1.2])
+        end
 
-        set(gca,'XTick',[])
-        plabelStr = ['SBID: ' num2str(subject_id) ' BA: ' num2str(translateArea_SB(brain_area{:})) ' Cluster: ' num2str(clusterID) ' p1=' num2str(p_ANOVA) ' p2=' num2str(p_bANOVA)];
-        xlabel(plabelStr)
+        % Setting x axis to ms (Hardcoded to 100kHz sample rate, 256 samples)
+        set(gca, 'XTick',0:100:256)
+        set(gca, 'XTickLabel',0:1:256/100)
+        xlabel('Time (ms)')
+        ylabel('\muV')
 
-        % set(gcf,'position',[-1920 817 1920 175])
-
+        % set(gcf,'position',[-1920 800 1920 180]) 
+         
+        shg
         if params.exportFig
-            set(gcf,'position',[-1920 817 1920 175])
+            set(gcf,'position',[-1920 800 1920 180])
             if ~isfield(params,'figOut') || isempty(params.figOut)
             figPath = 'C:\temp\figsSternberg\'; 
             else
@@ -170,15 +192,16 @@ for i = 1:length(all_units)%, parforArg)
             
             clusterID = nwbAll{SU.session_count}.units.vectordata.get('clusterID_orig').data.load(SU.unit_id);
             fName = ['SCID_' num2str(subject_id) '_Cell_' num2str(cellID) '_Cl_' num2str(clusterID) '_BA_' brain_area{:}];
-            saveas(gcf, [params.figOut filesep fName '.png' ], 'png')
+            saveas(gcf, [params.figOut filesep fName '.' params.exportType ], params.exportType)
             fprintf('| Figure Saved')
             close(gcf);
         end
+        
     end
     fprintf('\n') % New line for each cell
 end
-fprintf('Total Significant:%d/%d (%.2f%%)\n',sum(sig_cells_sc),length(all_units),sum(sig_cells_sc)/length(all_units)*100)
-
-
+    fprintf('Total Significant:%d/%d (%.2f%%)\n',sum(sig_cells_sc),length(all_units),sum(sig_cells_sc)/length(all_units)*100)
 end
+
+
 

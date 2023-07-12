@@ -14,7 +14,7 @@ if ~isempty(areaCode) && isempty(areaLabel) % Convert area codes to labels
         case 1
             areaLabel='hippocampus_right';
         case 2
-            areaLabel= 'hippocampus_left';
+            areaLabel='hippocampus_left';
         case 3
             areaLabel='amygdala_right';
         case 4
@@ -76,7 +76,7 @@ if isempty(areaCode) && ~isempty(areaLabel) && condenseFlag == 1 % Condense labe
         case {'pre_supplementary_motor_area_right','pre_supplementary_motor_area_left'}
             areaLabel='pre-SMA';
         case {'ventral_medial_prefrontal_cortex_left','ventral_medial_prefrontal_cortex_right'}
-            areaLabel= 'OFC';
+            areaLabel= 'vmPFC';
         otherwise
             warning(['Label cannot be mapped, assigning NaN: ' areaLabel]);
             areaLabel='NA';

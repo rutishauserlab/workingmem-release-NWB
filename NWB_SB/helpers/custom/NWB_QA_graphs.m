@@ -1,98 +1,100 @@
-function [QA] = NWB_QA_graphs(nwbAll,units)
+function [QA] = NWB_QA_graphs(nwbAll,units, is_sternberg)
 % NWB_QA_graphs Generates behavioral and spike sorting metrics used in the SB
 % data release. 
 % nwbAll: A cell arrays containing all nwb files in the dataset 
-% units: a units struct created using NWB_SB_extractUnits
+% units: A units struct created using NWB_SB_extractUnits
+% is_sternberg: 1 or 0 logical if sternberg is being processed. Will plot
+% behavioral metrics if 1. 
 % figHandle: The resulting figure that shows all relevant stat tests. 
 
 QA = figure("Visible","on");
 sessionCount = length(nwbAll);
 
-
-%% Accuracy
-accTotals = zeros(sessionCount,1);
-for i = 1:length(accTotals)
-    accTrials = nwbAll{i}.intervals_trials.vectordata.get('response_accuracy').data.load();
-    accTotals(i) = sum(accTrials)/length(accTrials)*100;
-end
-accFig = subplot(2,5,5); %#ok<NASGU>
-plot(sort(accTotals),'k.','MarkerSize',10); hold on
-
-% SEM bars
-acc_sem = std(accTotals)/sqrt(length(accTotals));
-plot(1:length(accTotals), zeros(length(accTotals),1) + mean(accTotals),'b','LineWidth',1.5)
-plot(1:length(accTotals), zeros(length(accTotals),1) + mean(accTotals)-acc_sem,'b','LineWidth',1)
-plot(1:length(accTotals), zeros(length(accTotals),1) + mean(accTotals)+acc_sem,'b','LineWidth',1)
-
-title(sprintf('Accuracy: \\mu=%.2f SE=%.2f',mean(accTotals),acc_sem))
-xlabel('Session no.')
-ylabel('Accuracy (%)')
-xlim([0 length(accTotals)+1])
-ylim([min(accTotals)-5 100])
-if sessionCount>1; xticks([1 sessionCount]); end
-set(gca,'FontSize',13)
-hold off;
-
-%% RT vs Load
-filter_correct = 1;
-RTs_all = []; % Compiling raw RTs; {subject ID, load, RT}
-for i = 1:sessionCount
-    session_Loads = double(nwbAll{i}.intervals_trials.vectordata.get('loads').data.load());
-    tsResp = nwbAll{i}.intervals_trials.vectordata.get('timestamps_Response').data.load();
-    tsProbe = nwbAll{i}.intervals_trials.vectordata.get('timestamps_Probe').data.load();
-    if filter_correct % Filtering out incorrect trials
-        accuracyBool = logical(nwbAll{i}.intervals_trials.vectordata.get('response_accuracy').data.load());
-        session_Loads = session_Loads(accuracyBool);
-        tsResp = tsResp(accuracyBool);
-        tsProbe = tsProbe(accuracyBool);
+if is_sternberg % If Sternberg, give behavioral plots
+    %% Accuracy
+    accTotals = zeros(sessionCount,1);
+    for i = 1:length(accTotals)
+        accTrials = nwbAll{i}.intervals_trials.vectordata.get('response_accuracy').data.load();
+        accTotals(i) = sum(accTrials)/length(accTrials)*100;
     end
-    session_RTs = tsResp-tsProbe; 
-    session_Num = NaN(length(session_RTs),1); session_Num(:) = i;
-    rtMat = [session_Num,session_Loads,session_RTs];
-    RTs_all = vertcat(RTs_all,rtMat); %#ok<AGROW> % Grows, but doesn't scale drastically. 
+    accFig = subplot(2,5,5); %#ok<NASGU>
+    plot(sort(accTotals),'k.','MarkerSize',10); hold on
+    
+    % SEM bars
+    acc_sem = std(accTotals)/sqrt(length(accTotals));
+    plot(1:length(accTotals), zeros(length(accTotals),1) + mean(accTotals),'b','LineWidth',1.5)
+    plot(1:length(accTotals), zeros(length(accTotals),1) + mean(accTotals)-acc_sem,'b','LineWidth',1)
+    plot(1:length(accTotals), zeros(length(accTotals),1) + mean(accTotals)+acc_sem,'b','LineWidth',1)
+    
+    title(sprintf('Accuracy: \\mu=%.2f SE=%.2f',mean(accTotals),acc_sem))
+    xlabel('Session no.')
+    ylabel('Accuracy (%)')
+    xlim([0 length(accTotals)+1])
+    ylim([min(accTotals)-5 100])
+    if sessionCount>1; xticks([1 sessionCount]); end
+    set(gca,'FontSize',13)
+    hold off;
+    
+    %% RT vs Load
+    filter_correct = 1;
+    RTs_all = []; % Compiling raw RTs; {subject ID, load, RT}
+    for i = 1:sessionCount
+        session_Loads = double(nwbAll{i}.intervals_trials.vectordata.get('loads').data.load());
+        tsResp = nwbAll{i}.intervals_trials.vectordata.get('timestamps_Response').data.load();
+        tsProbe = nwbAll{i}.intervals_trials.vectordata.get('timestamps_Probe').data.load();
+        if filter_correct % Filtering out incorrect trials
+            accuracyBool = logical(nwbAll{i}.intervals_trials.vectordata.get('response_accuracy').data.load());
+            session_Loads = session_Loads(accuracyBool);
+            tsResp = tsResp(accuracyBool);
+            tsProbe = tsProbe(accuracyBool);
+        end
+        session_RTs = tsResp-tsProbe; 
+        session_Num = NaN(length(session_RTs),1); session_Num(:) = i;
+        rtMat = [session_Num,session_Loads,session_RTs];
+        RTs_all = vertcat(RTs_all,rtMat); %#ok<AGROW> % Grows, but doesn't scale drastically. 
+    end
+    
+    % Median RTs
+    anovanSet = double.empty(0,3);
+    RTmedians_all = zeros(sessionCount,3);
+    for i = 1:sessionCount % Accesses RT column in 3rd row
+        RTs_session = RTs_all(RTs_all(:,1)==i,:);
+        RT_1 = median(RTs_session(RTs_session(:,2)==1,3));
+        RT_2 = median(RTs_session(RTs_session(:,2)==2,3));
+        RT_3 = median(RTs_session(RTs_session(:,2)==3,3));
+        RTmedians_all(i,:) = [RT_1, RT_2, RT_3];
+        anovanSet = vertcat(anovanSet,horzcat([i i i]',[1 2 3]',RTmedians_all(i,:)')); %#ok<AGROW>
+    end
+    
+    % ANOVAN 
+    grp = { anovanSet(:,1), anovanSet(:,2)};
+    [p_anova,tbl_anova_acc,~] = anovan( anovanSet(:,3), grp, 'random',1,'varnames',{'sessionID','Load'}, 'model','linear','display','off');
+    
+    % Plot RTs
+    figRT = subplot(2,5,10); %#ok<NASGU>
+    for i = 1:size(RTmedians_all,1)
+        plot([1 2 3],RTmedians_all(i,:),'k.-.','MarkerSize',10); hold on
+    end
+    title('Median RT')
+    xlabel(sprintf('Load | F_{%d,%d}: %.4f | p: %.4f',... 
+        tbl_anova_acc{3,3},tbl_anova_acc{4,3},tbl_anova_acc{3,6},tbl_anova_acc{3, 7}))
+    ylabel('Reaction Time (s)')
+    xlim([.5 3.5])
+    xticks([1 2 3])
+    ylim([min(RTmedians_all(:))-0.25 max(RTmedians_all(:))+0.25])
+    yticks([0.5 1 1.5 2])
+    
+    % SEM bars
+    for i = 1:size(RTmedians_all,2)
+        semRT = std(RTmedians_all(:,i))/sqrt(length(RTmedians_all(:,i)));
+        offset = 0.25;
+        plot([i-offset i+offset], [mean(RTmedians_all(:,i)) mean(RTmedians_all(:,i))],'b-','LineWidth',1.5)
+        plot([i-offset i+offset], [mean(RTmedians_all(:,i)) mean(RTmedians_all(:,i))] + semRT,'b-','LineWidth',1)
+        plot([i-offset i+offset], [mean(RTmedians_all(:,i)) mean(RTmedians_all(:,i))] - semRT,'b-','LineWidth',1)
+    end
+    set(gca,'FontSize',13)
+    hold off;
 end
-
-% Median RTs
-anovanSet = double.empty(0,3);
-RTmedians_all = zeros(sessionCount,3);
-for i = 1:sessionCount % Accesses RT column in 3rd row
-    RTs_session = RTs_all(RTs_all(:,1)==i,:);
-    RT_1 = median(RTs_session(RTs_session(:,2)==1,3));
-    RT_2 = median(RTs_session(RTs_session(:,2)==2,3));
-    RT_3 = median(RTs_session(RTs_session(:,2)==3,3));
-    RTmedians_all(i,:) = [RT_1, RT_2, RT_3];
-    anovanSet = vertcat(anovanSet,horzcat([i i i]',[1 2 3]',RTmedians_all(i,:)')); %#ok<AGROW>
-end
-
-% ANOVAN 
-grp = { anovanSet(:,1), anovanSet(:,2)};
-[p_anova,tbl_anova_acc,~] = anovan( anovanSet(:,3), grp, 'random',1,'varnames',{'sessionID','Load'}, 'model','linear','display','off');
-
-% Plot RTs
-figRT = subplot(2,5,10); %#ok<NASGU>
-for i = 1:size(RTmedians_all,1)
-    plot([1 2 3],RTmedians_all(i,:),'k.-.','MarkerSize',10); hold on
-end
-title('Median RT')
-xlabel(sprintf('Load | F_{%d,%d}: %.4f | p: %.4f',... 
-    tbl_anova_acc{3,3},tbl_anova_acc{4,3},tbl_anova_acc{3,6},tbl_anova_acc{3, 7}))
-ylabel('Reaction Time (s)')
-xlim([.5 3.5])
-xticks([1 2 3])
-ylim([min(RTmedians_all(:))-0.25 max(RTmedians_all(:))+0.25])
-yticks([0.5 1 1.5 2])
-
-% SEM bars
-for i = 1:size(RTmedians_all,2)
-    semRT = std(RTmedians_all(:,i))/sqrt(length(RTmedians_all(:,i)));
-    offset = 0.25;
-    plot([i-offset i+offset], [mean(RTmedians_all(:,i)) mean(RTmedians_all(:,i))],'b-','LineWidth',1.5)
-    plot([i-offset i+offset], [mean(RTmedians_all(:,i)) mean(RTmedians_all(:,i))] + semRT,'b-','LineWidth',1)
-    plot([i-offset i+offset], [mean(RTmedians_all(:,i)) mean(RTmedians_all(:,i))] - semRT,'b-','LineWidth',1)
-end
-set(gca,'FontSize',13)
-hold off;
-
 %% Spike Sorting Metrics
 % Aggregating timestamps across session types. 
 total_ts = {units(:).spike_times}; 

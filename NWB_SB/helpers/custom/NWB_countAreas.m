@@ -17,8 +17,8 @@ sigAreas = allAreas(sig_cells>0);
 [labels_sig_unordered, ~, uniqueInds_sig] = unique(sigCondensed);
 
 % Organize Areas
-ind_OFC_tot = find(strcmp(labels_tot_unordered,'OFC'));
-ind_OFC_sig = find(strcmp(labels_sig_unordered,'OFC'));
+ind_OFC_tot = find(strcmp(labels_tot_unordered,'vmPFC'));
+ind_OFC_sig = find(strcmp(labels_sig_unordered,'vmPFC'));
 ind_ACC_tot = find(strcmp(labels_tot_unordered,'dACC'));
 ind_ACC_sig = find(strcmp(labels_sig_unordered,'dACC'));
 ind_SMA_tot = find(strcmp(labels_tot_unordered,'pre-SMA'));

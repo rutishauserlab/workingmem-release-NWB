@@ -23,11 +23,12 @@ if nargin<8
     smoothKernelWidth=.200;
 end
 if nargin<9
-    timeRangesToSmooth=timeRangesToPlot;
+    timeRangesToSmooth= timeRangesToPlot;% [timeRangesToPlot(1)+smoothKernelWidth timeRangesToPlot(2) + smoothKernelWidth];
 end
 if nargin<10
     smoothMethod=1;
 end
+% timeRangesToPlot = [timeRangesToPlot_in(1)+smoothKernelWidth timeRangesToPlot_in(2) + smoothKernelWidth]; % Testing resize
 
 
 %grpRanges is the number of subgroups, equivalent to colortill in
