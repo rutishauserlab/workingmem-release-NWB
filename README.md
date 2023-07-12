@@ -2,29 +2,55 @@
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 <!---
-[![Generic badge](https://img.shields.io/badge/release-1.0.0-green.svg)](https://github.com/rutishauserlab/workinggmem-release-NWB/releases/)
+[![Generic badge](https://img.shields.io/badge/release-1.0.0-green.svg)](https://github.com/rutishauserlab/workingmem-release-NWB/releases/)
 [![Generic badge](https://img.shields.io/badge/DOI-10.17605/OSF.IO/HV7JA-orange.svg)](https://osf.io/hv7ja/)
 -->
 ## Introduction
+
+[Neurodata Without Borders](https://www.nwb.org/)
+[NWB Format Specification](https://nwb-schema.readthedocs.io/en/latest/index.html)
 
 Abstract:
 >We present a dataset of 1809 single neurons recorded from the human medial temporal lobe (amygdala and hippocampus) and medial frontal lobe (anterior cingulate cortex, pre-supplementary motor area, ventral medial prefrontal cortex) across 41 sessions from 21 patients that underwent intracranial monitoring for epileptic activity. Subjects first performed a screening task (907 neurons), based on which we identified images for which highly selective cells were present in the medial temporal lobe. Subjects then performed a working memory task (902 neurons), in which they were sequentially presented with 1-3 images, and following a maintenance period, were asked if a probe was identical to one of the currently maintained images. This Neurodata Without Borders (NWB) formatted dataset includes spike times, extracellular spike waveforms, stimuli presented, behavior, electrode locations, and subject demographics. As validation, we replicate previous findings on the existence of concept cells and their persistent activity during working memory maintenance.  This dataset provides a substantial amount of rare human single neuron recordings together with behavior, thereby enabling investigation of the neural mechanisms of working memory at the single-neuron level.
 
 ## Installation (Code)
 
+This repository can be downloaded by entering the following commands:
+
+'cd $target_directory'
+'git clone https://github.com/rutishauserlab/workingmem-release-NWB.git`
+
+
 ## Installation (MatNWB)
+
+Documentation: 
+MatNWB version used: 2.6.0.2
+[MatNWB](https://github.com/NeurodataWithoutBorders/matnwb)
+[MatNWB Documentation](https://neurodatawithoutborders.github.io/matnwb/)
+
+
+## Installation & File Validation (Python)
+
+
 
 ## Installation (Data)
 See DANDIset #469
-https://dandiarchive.org/dandiset/000469/
+[Dandiset](https://dandiarchive.org/dandiset/000469)
 
 ## MATLAB Analysis
+
+
+
+
+
+
+
 
 ## Contributors
 * [Michael Kyzar](mailto:kyzarnexus@gmail.com)
 * [Ueli Rutishauser](mailto:Ueli.Rutishauser@cshs.org) (Principal Investigator)
 
->(ADD CITATION)
+>(add citation upon manuscript acceptance)
 
 ## Funding
 
@@ -32,7 +58,7 @@ Acquisition of this dataset has been supported by the National Institute of Ment
 
 ## License 
 
-"NWB_SB" Copyright (c) 2019, Rutishauser Lab. All rights reserved.
+"workingmem-release-NWB" Copyright (c) 2019, Rutishauser Lab. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
