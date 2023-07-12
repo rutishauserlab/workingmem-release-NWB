@@ -1,10 +1,10 @@
-# Dataset of human-single neuron activity during a Sternberg working memory task 
+# Code for: Dataset of human-single neuron activity during a Sternberg working memory task 
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
-<!---
+
 [![Generic badge](https://img.shields.io/badge/release-1.0.0-green.svg)](https://github.com/rutishauserlab/workingmem-release-NWB/releases/)
-[![Generic badge](https://img.shields.io/badge/DOI-10.17605/OSF.IO/HV7JA-orange.svg)](https://osf.io/hv7ja/)
--->
+
+[![Generic badge](https://img.shields.io/badge/DOI-Status_Pending-orange.svg)](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
 ## Introduction
 
 [Neurodata Without Borders](https://www.nwb.org/)
@@ -35,8 +35,8 @@ MatNWB version used: 2.6.0.2
 
 
 ## Installation (Data)
-See DANDIset #469
-[Dandiset](https://dandiarchive.org/dandiset/000469)
+
+The dataset is available in NWB format from the Dandi Archive, under [Dandiset #469](https://dandiarchive.org/dandiset/000469).
 
 ## MATLAB Analysis
 
