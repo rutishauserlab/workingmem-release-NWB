@@ -18,8 +18,8 @@ Abstract:
 
 This repository can be downloaded by entering the following commands:
 
-'cd $target_directory'
-'git clone https://github.com/rutishauserlab/workingmem-release-NWB.git`
+`cd $target_directory`
+`git clone https://github.com/rutishauserlab/workingmem-release-NWB.git`
 
 
 ## Installation (MatNWB)
