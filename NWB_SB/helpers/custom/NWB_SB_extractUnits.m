@@ -1,4 +1,4 @@
-function [all_units] =NWB_SB_extractUnits(nwbAll)
+function [all_units] =NWB_SB_extractUnits(nwbAll, load_all_waveforms)
 %NWB_SB_extractUnits Takes a cell array of loaded nwb files and returns all
 %   single unit information across all the files. 
 %   nwbAll: cell array of loaded nwb files
@@ -25,23 +25,31 @@ for i=1:length(nwbAll)
     end
     
     % Import Waveforms
-    % wf_mean_all = nwbAll{i}.units.waveform_mean.data.load();
-    wf_all = nwbAll{i}.units.waveforms.data.load();
-    wf_ind = nwbAll{i}.units.waveforms_index.data.load();
-    wf_ind_ind = nwbAll{i}.units.waveforms_index_index.data.load();
-
-    % Compare num_waveforms to num_spikes
-    if size(wf_all,2) ~= length(spike_times_session)
-        error('Number of spikes does not equal number of waveforms')
-    elseif size(wf_all,2) ~= max(wf_ind)
-        error('Waveform indices exceed the number of waveforms.')
-    end
-
-    % Performs double indexing
-    wf_cells = cell(length(unit_ids),1);
-    wf_cells{1} = wf_all(:,1:wf_ind(wf_ind_ind(1)))';
-    for j = 2:length(wf_cells)
-        wf_cells{j} = wf_all(:,wf_ind(wf_ind_ind(j)-1)+1:wf_ind(wf_ind_ind(j)))';
+    if load_all_waveforms % Imports all waveforms (memory intensive)
+        wf_all = nwbAll{i}.units.waveforms.data.load();
+        wf_ind = nwbAll{i}.units.waveforms_index.data.load();
+        wf_ind_ind = nwbAll{i}.units.waveforms_index_index.data.load();
+        % Compare num_waveforms to num_spikes
+        if size(wf_all,2) ~= length(spike_times_session)
+            error('Number of spikes does not equal number of waveforms')
+        elseif size(wf_all,2) ~= max(wf_ind)
+            error('Waveform indices exceed the number of waveforms.')
+        end
+        % Performs double indexing
+        wf_cells_all = cell(length(unit_ids),1);
+        wf_cells_all{1} = wf_all(:,1:wf_ind(wf_ind_ind(1)))';
+        for j = 2:length(wf_cells_all)
+            wf_cells_all{j} = wf_all(:,wf_ind(wf_ind_ind(j)-1)+1:wf_ind(wf_ind_ind(j)))';
+        end
+        wf_cells = wf_cells_all;
+    else % Imports only mean waveforms. 
+        wf_mean_all = nwbAll{i}.units.waveform_mean.data.load();
+        % Assigning to cell array
+        wf_cells_mean = cell(length(unit_ids),1);
+        for j = 1:length(wf_cells_mean)
+            wf_cells_mean{j} = wf_mean_all(:,j)';
+        end
+        wf_cells = wf_cells_mean;
     end
 
 

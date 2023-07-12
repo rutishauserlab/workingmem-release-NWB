@@ -22,11 +22,13 @@ if isfile([datasetPath fs 'dandiset.yaml']) % Check if the dandiset is being acc
     if ~isempty(importRange)
         preStr1 = string(importRange);
         preStr2 = string(importRange); preStr2(:) = 'sub-';
+        preStrFs = string(importRange); preStrFs(:) = fs;
         strSearch = strcat(preStr2,preStr1);
-        folderList = folderNamesTotal(contains(folderNamesTotal,strSearch))';
+        folderNamesAppended = cellfun(@(x) strcat(x,preStrFs(1)),folderNamesTotal );
+        folderList = folderNamesTotal(contains(folderNamesAppended,strcat(strSearch,preStrFs)))';
         
         preStrFileExt = string(importRange); preStrFileExt(:) = ['_ses-' num2str(session_type) '_ecephys+image.nwb'];
-        preStrFs = string(importRange); preStrFs(:) = fs;
+        
         fileList = strcat(folderList,preStrFs,folderList,preStrFileExt);
     else
         error('Please specify import range.')

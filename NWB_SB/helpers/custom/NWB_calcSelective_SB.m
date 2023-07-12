@@ -2,7 +2,8 @@ function [sig_cells,areasSternberg] = NWB_calcSelective_SB(nwbAll, all_units, pa
 %NWB_CALCSELECTIVE Takes the output of NWB_SB_extractUnits and runs
 %selectivity tests for the sternberg task. Optionally plots trial aligned
 %spikes
-if isfield(params,'rateFilter')
+
+if isfield(params,'rateFilter') && params.rateFilter > 0
     rateFilter = params.rateFilter;
 else
     rateFilter = [];
@@ -21,16 +22,15 @@ if ~isempty(rateFilter)
 end
 all_units = all_units(logical(aboveRate));
 
+
 areasSternberg = cell(length(all_units),1);
 concept_cells_sb = zeros(length(all_units),1); alphaLim = 0.05;
+hzPref = zeros(length(all_units),1);
+hzNonPref = zeros(length(all_units),1);
 maint_cells_sb = zeros(length(all_units),1);
 probe_cells_sb = zeros(length(all_units),1);
-if isfield(params,'runParallel') && params.runParallel == 1 % Setting to serial or parallel processing. 
-    parforArg = Inf; % Note: status messages will not occur in order
-else
-    parforArg = 0;
-end
-for i = 1:length(all_units)%, parforArg)
+% Looping over all cells
+for i = 1:length(all_units) 
     SU = all_units(i);
     subject_id = SU.subject_id;
     cellID = SU.unit_id;
@@ -93,6 +93,10 @@ for i = 1:length(all_units)%, parforArg)
         concept_cells_sb(i) = 1;
         end
     end
+    % Saving rate data for additional tests between pref/non-pref trials
+    hzPref(i) = mean(HzEnc1(logical(id_Trial_maxOnly)));
+    hzNonPref(i) = mean(HzEnc1(~logical(id_Trial_maxOnly)));
+
     %% Significance Tests: Maintenance Cells
     % Perform a t-test between the mean firing rate during the maintenance
     % period and baseline period (fixation cross). If the cell was
@@ -117,11 +121,12 @@ for i = 1:length(all_units)%, parforArg)
         trialRate = length(singleTrialSpikes)/(fixOffset-fixDelay); % Firing rate across testing period.
         HzFix(k) = trialRate;
     end
-    % Performing paired one-tailed t-test
-    [detect_maint, p_maint] = ttest(HzMaint,HzFix,'Tail','right','Alpha',alphaLim);
+    % % Performing paired t-test
+    sidedness = 'right';
+    [detect_maint, p_maint] = ttest(HzMaint,HzFix,'Tail',sidedness,'Alpha',alphaLim);
     if detect_maint && concept_cells_sb(i) % If the maint cell was previously marked as a concept cell
         non_selective_trials = ~id_Trial_maxOnly;
-        [maint_cells_sb(i),p2_maint] = ttest(HzMaint(non_selective_trials),HzFix(non_selective_trials),'Tail','right','Alpha',alphaLim);
+        [maint_cells_sb(i),p2_maint] = ttest(HzMaint(non_selective_trials),HzFix(non_selective_trials),'Tail',sidedness,'Alpha',alphaLim);
         if maint_cells_sb(i)
             fprintf('| Maint -> M:%.2fHz F:%.2fHz p:%.2f, p2:%.2f ',mean(HzMaint),mean(HzFix),p_maint,p2_maint)
         end
@@ -129,6 +134,22 @@ for i = 1:length(all_units)%, parforArg)
         maint_cells_sb(i) = 1;
         fprintf('| Maint -> M:%.2fHz F:%.2fHz p:%.2f ',mean(HzMaint),mean(HzFix),p_maint)
     end
+    
+    % % ALT METRIC: Permutation Test (Yields similar results)
+    % permutations = 2000;
+    % sidedness = 'larger'; % 'smaller': s1<s2; 'larger': s1>s2
+    % [p_maint, ~, ~] = permutationTest(HzMaint,HzFix, permutations, 'sidedness', sidedness);
+    % if p_maint < alphaLim && concept_cells_sb(i) % If the maint cell was previously marked as a concept cell
+    %     non_selective_trials = ~id_Trial_maxOnly;
+    %     [p2_maint,~,~] = permutationTest(HzMaint(non_selective_trials),HzFix(non_selective_trials), permutations, 'sidedness',sidedness);
+    %     if p2_maint < alphaLim
+    %         fprintf('| Maint -> M:%.2fHz F:%.2fHz p:%.2f, p2:%.2f ',mean(HzMaint),mean(HzFix),p_maint,p2_maint)
+    %         maint_cells_sb(i) = 1;
+    %     end
+    % elseif p_maint < alphaLim && ~concept_cells_sb(i) % for pure maint cells. 
+    %     maint_cells_sb(i) = 1;
+    %     fprintf('| Maint -> M:%.2fHz F:%.2fHz p:%.2f ',mean(HzMaint),mean(HzFix),p_maint)
+    % end
 
 
     %% Significance Tests: Probe Cells
@@ -151,125 +172,159 @@ for i = 1:length(all_units)%, parforArg)
     % maintDelay = 0; % Delay of maint onset to effect. 
     % maintOffset = 2.5; % Time past maint onset. End of picture presentation.
     for k = 1:length(HzEnc)
-        trialSpikes = []; totalTime = 0;
+        trialSpikeCounts = 0; totalTime = 0;
         % Enc 1
         periodFilter = (SU.spike_times>(stim(k).tsEnc1+encDelay)) & (SU.spike_times<(stim(k).tsEnc1+encOffset));
         singleTrialSpikes = SU.spike_times(periodFilter);
-        trialSpikes = [trialSpikes; singleTrialSpikes]; %#ok<AGROW>
+        trialSpikeCounts = trialSpikeCounts + length(singleTrialSpikes);
         totalTime = totalTime + (encOffset-encDelay);
         if stim(k).tsEnc2 > 0 % Enc 2
             periodFilter = (SU.spike_times>(stim(k).tsEnc2+encDelay)) & (SU.spike_times<(stim(k).tsEnc2+encOffset));
             singleTrialSpikes = SU.spike_times(periodFilter);
-            trialSpikes = [trialSpikes; singleTrialSpikes]; %#ok<AGROW>
+            trialSpikeCounts = trialSpikeCounts + length(singleTrialSpikes);
             totalTime = totalTime + (encOffset-encDelay);
         end
         if stim(k).tsEnc3 > 0 % Enc 3
             periodFilter = (SU.spike_times>(stim(k).tsEnc2+encDelay)) & (SU.spike_times<(stim(k).tsEnc2+encOffset));
             singleTrialSpikes = SU.spike_times(periodFilter);
-            trialSpikes = [trialSpikes; singleTrialSpikes]; %#ok<AGROW>
+            trialSpikeCounts = trialSpikeCounts + length(singleTrialSpikes);
             totalTime = totalTime + (encOffset-encDelay);
         end
-        % Total Enc
-        % trialRate = length()
-        
-        % Maint
+        % % Maint (Deprecated, t-test calculated separately)
         % periodFilter = (SU.spike_times>(stim(k).tsMaint+maintDelay)) & (SU.spike_times<(stim(k).tsEnc2+maintOffset));
         % singleTrialSpikes = SU.spike_times(periodFilter);
-        % trialSpikes = [trialSpikes; singleTrialSpikes]; %#ok<AGROW>
+        % trialSpikeCounts = trialSpikeCounts + length(singleTrialSpikes); 
         % totalTime = totalTime + (maintOffset-maintDelay);
        
         % Calculating Total Rate per trial
-        trialRate = length(trialSpikes)/(totalTime); % Firing rate across testing period.
+        trialRate = trialSpikeCounts/totalTime; % Firing rate across testing period.
         HzEnc(k) = trialRate;
     end
 
-    
-    
+        
     % Performing paired one-tailed t-test
     [detect_probe1, p_probe1] = ttest(HzProbe,HzEnc,'Tail','right','Alpha',alphaLim);
     [detect_probe2, p_probe2] = ttest(HzProbe,HzMaint,'Tail','right','Alpha',alphaLim);
     if detect_probe1 && detect_probe2
-        fprintf('| Probe -> P:%.2fHz Enc:%.2fHz Mnt:%.2fHz p:%.2f p2:%.2f ',mean(HzProbe),mean(HzEnc),mean(HzMaint),p_probe1,p_probe2)
+        fprintf('| Probe -> P:%.2fHz E:%.2fHz M:%.2fHz p:%.2f p2:%.2f ',mean(HzProbe),mean(HzEnc),mean(HzMaint),p_probe1,p_probe2)
         probe_cells_sb(i) = 1;
     end
-    % if detect_maint && sig_cells_sb(i) % If the maint cell was previously marked as a concept cell
-    %     non_selective_trials = ~id_Trial_maxOnly;
-    %     [maint_cells_sb(i),p2_maint] = ttest(HzMaint(non_selective_trials),HzFix(non_selective_trials),'Tail','right','Alpha',alphaLim);
-    %     if maint_cells_sb(i)
-    %         fprintf('| Maint M:%.2fHz F: %.2fHz p: %.2f, p2: %.2f',mean(HzMaint),mean(HzFix),p_maint,p2_maint)
-    %     end
-    % elseif detect_maint && ~sig_cells_sb(i) % for pure maint cells. 
-    %     maint_cells_sb(i) = 1;
-    %     fprintf('| Maint M:%.2fHz F: %.2fHz p: %.2f',mean(HzMaint),mean(HzFix),p_maint)
-    % end
-    % 
-    % 
 
+    
 
     %% Rasters, PSTH, & Selective Image
-    if ((p_ANOVA<alphaLim)&&(p_bANOVA<alphaLim) && params.doPlot) || params.plotAlways
+    % Flagging significant cells for plotting
+    switch params.plotMode
+        case 1 % Concept
+            plotFlag = params.doPlot && concept_cells_sb(i);
+        case 2 % Maint
+            plotFlag = params.doPlot && maint_cells_sb(i);
+        case 3 % Probe
+            plotFlag = params.doPlot && probe_cells_sb(i);
+        case 4 % All
+            plotFlag = params.doPlot && (concept_cells_sb(i) || maint_cells_sb(i) || probe_cells_sb(i));
+        otherwise
+            warning('Plot mode not specified. Defaulting to concept cells.\n')
+            in = input('Continue? (y/n)\n',"s");
+            if any(strcmp(in,["Y","y"]))
+                plotFlag = params.doPlot && concept_cells_sb(i);
+            elseif any(strcmp(in,["N","n"]))
+                fprintf('Aborting.\n')
+                return
+            else
+                fprintf('Input not specified. Aborting.\n')
+                return
+            end
+    end
+
+    if plotFlag || params.plotAlways
         % Metrics
         subject_id = SU.subject_id;
         cellID = SU.unit_id;
         brain_area = nwbAll{SU.session_count}.general_extracellular_ephys_electrodes.vectordata.get('location').data.load(SU.electrodes);
         clusterID = nwbAll{SU.session_count}.units.vectordata.get('clusterID_orig').data.load(SU.unit_id);
-        plabelStr = ['SBID: ' num2str(subject_id) ' BA: ' num2str(translateArea_SB(brain_area{:})) ' Cluster: ' num2str(clusterID) ' p1=' num2str(p_ANOVA) ' p2=' num2str(p_bANOVA)];
+        plabelStr = ['sub-' num2str(subject_id) '-ses-2'...
+            ' | BA: ' strrep(brain_area{:},'_',' ') ...
+            ' | Cell: ' num2str(cellID) ...
+            ' | Elec: ' num2str(SU.electrodes) ...
+            ' | p1=' num2str(p_ANOVA) ...
+            ' | p2=' num2str(p_bANOVA)];
         
+        % Set Params
+        spikePlotParams=[];
+        spikePlotParams.colors = { ...
+            [1 0 0], ... % Red
+            [.7 .7 .7], ... % Grey
+            [0 0 1], ... % Blue
+        	[1 0 1], ... % Magenta
+            [0.4940 0.1840 0.5560] ... % Purple
+            };  
+        spikePlotParams.spikewidth  = 1.25;
+        spikePlotParams.spikeheight = 1;
+        spikePlotParams.binsizePSTH = .050;
+        spikePlotParams.smoothKernelWidth = 1.5 * spikePlotParams.binsizePSTH;
+        spikePlotParams.plotMarkerPos = 0;
+        spikePlotParams.trimPadding = 1; % Used to overcome plotting artifacts encountered when using gaussian smoothing. 
+        spikePlotParams.padding = 2 * spikePlotParams.smoothKernelWidth;
+
+
         % t before stim onset (In Seconds)
-        StimBaselineEnc= 0; % for all encodings
-        StimBaselineMaint = 0;  % before maintenance onset
-        StimBaselineProbe = 0; % before probe onset
-        % StimBaselineButtonPress = 1; % before button press
+        StimBaselineEnc= .5; % for all encodings
+        StimBaselineMaint = .5;  % before maintenance onset
+        StimBaselineProbe = .5; % before probe onset
         % t after stim onset (In Seconds)
         StimOnTimeEnc  = 1; % after for all encodings
         StimOnTimeMaint = 2.5; % after maintenance onset
         StimOnTimeProbe = 2; % after probe onset
-        % StimOnTimeButtonPress = 1; % after button press
+
         
+        % Fixes gaussian smoothing cutoff. 
+        % % Offsets to include more data in gaussian smoothing kernel
+        padding = .25;
+        period_StimBaselineEnc= StimBaselineEnc + padding; % for all encodings
+        period_StimBaselineMaint = StimBaselineMaint + padding;  % before maintenance onset
+        period_StimBaselineProbe = StimBaselineProbe + padding; % before probe onset
+        period_StimOnTimeEnc  = StimOnTimeEnc + padding; % after for all encodings
+        period_StimOnTimeMaint = StimOnTimeMaint + padding; % after maintenance onset
+        period_StimOnTimeProbe = StimOnTimeProbe + padding; % after probe onset
+
         % Defining Periods
         periods = [];
-        periods.Enc1 = NWB_determineSBPeriods( nonzeros([stim.tsEnc1]), StimBaselineEnc, StimOnTimeEnc );
-        periods.Enc2 = NWB_determineSBPeriods( nonzeros([stim.tsEnc2]), StimBaselineEnc, StimOnTimeEnc );
-        periods.Enc3 = NWB_determineSBPeriods( nonzeros([stim.tsEnc3]), StimBaselineEnc, StimOnTimeEnc );
-        periods.Maint = NWB_determineSBPeriods( nonzeros([stim.tsMaint]), StimBaselineMaint, StimOnTimeMaint );
-        periods.Probe = NWB_determineSBPeriods( nonzeros([stim.tsProbe]), StimBaselineProbe, StimOnTimeProbe );
+        periods.Enc1 = NWB_determineSBPeriods( nonzeros([stim.tsEnc1]), period_StimBaselineEnc, period_StimOnTimeEnc );
+        periods.Enc2 = NWB_determineSBPeriods( nonzeros([stim.tsEnc2]), period_StimBaselineEnc, period_StimOnTimeEnc );
+        periods.Enc3 = NWB_determineSBPeriods( nonzeros([stim.tsEnc3]), period_StimBaselineEnc, period_StimOnTimeEnc );
+        periods.Maint = NWB_determineSBPeriods( nonzeros([stim.tsMaint]), period_StimBaselineMaint, period_StimOnTimeMaint );
+        periods.Probe = NWB_determineSBPeriods( nonzeros([stim.tsProbe]), period_StimBaselineProbe, period_StimOnTimeProbe );
+        
+        
 
-
-
-        % Plotting Params
-        baseline = 0.5; % Time before stimulus onset. 
-        spikePlotParams=[];
-        spikePlotParams.colors1 = { [1.0 0 0],[1.0 0.8 0.6],[0.2 0.8 1.0],[0 0 1]};   % splitup into 4
-        spikePlotParams.spikewidth  = 1.25;
-        spikePlotParams.spikeheight = 1;
-        spikePlotParams.smoothKernelWidth = .200;
-        spikePlotParams.binsizePSTH = .020;
-   
         figNum = i;
         currentFigure = figure(figNum);
         currentFigure.set('Name', plabelStr)
-        % === Encoding 1 == Plot Raster and PSTH
-        offsets = [0];
+        %% === Encoding 1 == Plot Raster and PSTH
+        offsets = 0; % Spike times offset
         indsPref = [stim.idEnc1]==idMaxHz; indsNonPref = ~indsPref;
         indsPref = find(indsPref); indsNonPref = find(indsNonPref);
 
-        limitRange_forRaster = [ 0 1]; limitRange_forPSTH = [ 0 1 ]; 
-        markerPos=[]; % [StimBaselineEnc 1.5];
+        limitRange_forRaster = [ 0 StimBaselineEnc+StimOnTimeEnc + 2*padding ]; 
+        limitRange_forPSTH = [ 0 StimBaselineEnc+StimOnTimeEnc + 2*padding ]; 
+        markerPos=[StimBaselineEnc + padding  StimBaselineEnc + StimOnTimeEnc + padding ];
+        params_Enc1 = spikePlotParams; params_Enc1.colors = params_Enc1.colors(1:2);
         [axRaster_Enc1,axPSTH_Enc1] = plotSpikeRaster_multiple_simplified( ...
             3, offsets, limitRange_forRaster, limitRange_forPSTH, ...
             markerPos, SU.spike_times, ...
             {periods.Enc1}, {indsPref, indsNonPref}, ...
-            {'Preferred','Non-Preferred'},  [2 6 1], [2 6 7], spikePlotParams );
+            {'Preferred','Non-Preferred'},   [2 6 7], [2 6 1], params_Enc1);
         title('Enc1')
         xlabel(plabelStr)
-        % ylim([0 20])    
 
-        % === Encoding 2 == Plot Raster and PSTH
-        offsets = [];
-        limitRange_forRaster = [0 1]; limitRange_forPSTH = [0 1];
+        %% === Encoding 2 == Plot Raster and PSTH
+        offsets = [0];
+        limitRange_forRaster = [0 StimBaselineEnc+StimOnTimeEnc + 2*padding ]; 
+        limitRange_forPSTH = [0 StimBaselineEnc+StimOnTimeEnc + 2*padding ];
         
         
-        markerPos = [];% [StimBaselineEnc 1.5];
+        markerPos = [StimBaselineEnc + padding StimBaselineEnc+StimOnTimeEnc + padding ];% [StimBaselineEnc 1.5];
 
         indsEnc2_load2shown = find([ID_Enc2{:}]>0);    
 
@@ -284,18 +339,17 @@ for i = 1:length(all_units)%, parforArg)
 
         indsNonPref_Enc2_NonPrefEnc1 = find(PicOrder_Enc2_shownOnly_inEnc2 ~=idMaxHz &  PicOrder_Enc1_shownOnly_inEnc2 ~= idMaxHz );   % pref not shown in Enc2, and not shown in Enc1
         indsNonPref_Enc2_PrefEnc1 = find(PicOrder_Enc2_shownOnly_inEnc2    ~=idMaxHz &   PicOrder_Enc1_shownOnly_inEnc2 == idMaxHz);   % pref not shown in Enc2, but was shown in Enc1
-
+        params_Enc2 = spikePlotParams; params_Enc2.colors = params_Enc2.colors([1 3 2]);
         [axRaster_Enc2,axPSTH_Enc2] = plotSpikeRaster_multiple_simplified( 3, offsets, limitRange_forRaster, limitRange_forPSTH, markerPos, ...
-            SU.spike_times, {periods.Enc2}, {indsPref_Enc2, indsNonPref_Enc2_PrefEnc1, indsNonPref_Enc2_NonPrefEnc1 }, {'P_{Enc2 Only}', 'NP_{Enc2} P_{Enc1}','NP_{Enc2} NP_{Enc1}'},  [2 6 2], [2 6 8],spikePlotParams );
+            SU.spike_times, {periods.Enc2}, {indsPref_Enc2, indsNonPref_Enc2_PrefEnc1, indsNonPref_Enc2_NonPrefEnc1 }, {'P_{Enc2 Only}', 'NP_{Enc2} P_{Enc1}','NP_{Enc2} NP_{Enc1}'}, [2 6 8], [2 6 2], params_Enc2 );
         title(['Enc2'])
-        % ylim([0 20])   
         
   
-        % === Encoding 3 == Plot Raster and PSTH
-        offsets = [];
-        limitRange_forRaster = [ 0 1 ];
-        limitRange_forPSTH = [ 0 1 ]; %
-        markerPos=[]; %[StimBaselineEnc 1.5];
+        %% === Encoding 3 == Plot Raster and PSTH
+        offsets = [0];
+        limitRange_forRaster = [ 0 StimBaselineEnc+StimOnTimeEnc+ 2*padding  ];
+        limitRange_forPSTH = [ 0 StimBaselineEnc+StimOnTimeEnc+ 2*padding  ]; 
+        markerPos=[StimBaselineEnc+ padding  StimBaselineEnc+StimOnTimeEnc+ padding ]; %[StimBaselineEnc 1.5];
         
         indsEnc3_load3shown = find([ID_Enc3{:}] > 0);
         
@@ -309,33 +363,37 @@ for i = 1:length(all_units)%, parforArg)
         
         indsNonPref_Enc3_PrefEnc2 = find(PicOrder_Enc3_shownOnly_inEnc3~=idMaxHz &  PicOrder_Enc2_shownOnly_inEnc3 == idMaxHz ); % pref not shown in Enc3, pref shown in Enc2
         indsNonPref_Enc3_PrefEnc1 = find(PicOrder_Enc3_shownOnly_inEnc3~=idMaxHz &  PicOrder_Enc1_shownOnly_inEnc3 == idMaxHz ); % pref not shown in Enc3, pref shown in Enc1
-        
+        params_Enc3 = spikePlotParams; params_Enc3.colors = params_Enc3.colors([1 3 2]);
         [axRaster_Enc3,axPSTH_Enc3] = plotSpikeRaster_multiple_simplified( 3, offsets, limitRange_forRaster, limitRange_forPSTH, markerPos, ...
-            SU.spike_times, {periods.Enc3}, {indsPref_Enc3,[indsNonPref_Enc3_PrefEnc2; indsNonPref_Enc3_PrefEnc1],indsNonPref_Enc3_NonPrefEnc12 }, {'P','NP P_{E2} & NP P_{E1}','NP NP'},  [2 6 3],[2 6 9], spikePlotParams );
+            SU.spike_times, {periods.Enc3}, {indsPref_Enc3,[indsNonPref_Enc3_PrefEnc2; indsNonPref_Enc3_PrefEnc1],indsNonPref_Enc3_NonPrefEnc12 }, {'P','NP P_{E2} & NP P_{E1}','NP NP'}, [2 6 9], [2 6 3], params_Enc3 );
         title(['Enc3 ' ])
-        % ylim([0 20]) 
 
-        % === Maintenance == Plot Raster and PSTH
+
+        %% === Maintenance == Plot Raster and PSTH
         offsets = [0];
-        limitRange_forRaster = [StimBaselineMaint StimBaselineMaint + StimOnTimeMaint  ];
-        limitRange_forPSTH = [StimBaselineMaint StimBaselineMaint + StimOnTimeMaint ]; %
-        markerPos=[];% [StimBaselineMaint+2.5];
+        limitRange_forRaster = [0 StimBaselineMaint + StimOnTimeMaint + 2*padding ];
+        limitRange_forPSTH = [0 StimBaselineMaint + StimOnTimeMaint + 2*padding ]; %
+        markerPos=[StimBaselineMaint + padding, ...
+            StimBaselineMaint + 1 + padding, ...
+            StimBaselineMaint + 2 + padding];
+            % StimBaselineMaint + StimOnTimeMaint + padding];% 
         
         
         % Temp In-memory all
         encFilter = (idMaxHz == [ID_Enc1{:}]) + (idMaxHz == [ID_Enc2{:}]) + (idMaxHz == [ID_Enc3{:}]) > 0;
         indsEnc = find(encFilter);
         indsNonEnc = find(~encFilter);
-        
+
+        params_Maint = spikePlotParams; params_Maint.colors = params_Maint.colors([3 2]);
         [axRaster_Maint,axPSTH_Maint] = plotSpikeRaster_multiple_simplified( 3, offsets, limitRange_forRaster, limitRange_forPSTH, markerPos, ...
-            SU.spike_times, {periods.Maint}, {indsEnc,indsNonEnc}, {'P_{Enc1-3}','NP'}, [2 6 4],  [2 6 10],spikePlotParams );
+            SU.spike_times, {periods.Maint}, {indsEnc,indsNonEnc}, {'P_{Enc1-3}','NP'},   [2 6 10], [2 6 4], params_Maint );
 
         % [axRaster_Maint,axPSTH_Maint] = plotSpikeRaster_multiple_simplified( 3, offsets, limitRange_forRaster, limitRange_forPSTH, markerPos, ...
         %     SU.spike_times, {periods.Maint}, {indsNonPref,indsPref}, {'NP_{Enc1}','P_{Enc1}'}, [2 6 4],  [2 6 10],spikePlotParams );
         title(['Maint'])
         % ylim([0 20])
 
-        % === Probe == Plot Raster and PSTH
+        %% === Probe == Plot Raster and PSTH
         ProbeInOut = nwbAll{SU.session_count}.intervals_trials.vectordata.get('probe_in_out').data.load();
         probeID_mat = cell2mat(ID_Probe);
         indsProbe_pref_inmem = find( probeID_mat == idMaxHz & ProbeInOut==1 );
@@ -343,22 +401,26 @@ for i = 1:length(all_units)%, parforArg)
         indsProbe_nonpref_inmem = find( probeID_mat ~= idMaxHz & ProbeInOut==1 );
         indsProbe_nonpref_outmem = find( probeID_mat ~= idMaxHz & ProbeInOut==0 );
         
-        offsets = [];
-        limitRange_forRaster = [ 0 2.5  ];
-        limitRange_forPSTH = [ 0 2]; %
-        markerPos=[StimBaselineEnc];
+        offsets = 0;
+        limitRange_forRaster = [ 0 StimBaselineProbe + StimOnTimeProbe + padding];
+        limitRange_forPSTH = [ 0 StimBaselineProbe  + StimOnTimeProbe + padding]; %
+        markerPos=[StimBaselineProbe + padding, ...
+            StimBaselineProbe + 1 + padding, ...
+            StimBaselineProbe + 2 + padding];
+
+        params_probe = spikePlotParams; params_probe.colors = params_probe.colors([4 1 3 2]);
 
         [axRaster_Probe,axPSTH_Probe] = plotSpikeRaster_multiple_simplified( 3, offsets, limitRange_forRaster, limitRange_forPSTH, markerPos, ...
             SU.spike_times, {periods.Probe}, {indsProbe_pref_inmem, indsProbe_pref_outmem, indsProbe_nonpref_inmem,indsProbe_nonpref_outmem}, ...
-            { 'P in', 'P out','NP in','NP out'},  [2 6 5], [2 6 11], spikePlotParams ); 
+            { 'P in', 'P out','NP in','NP out'},   [2 6 11], [2 6 5], params_probe ); 
         title(['Probe ']);
-        % ylim([0 20])   
-        % === Selective Image ===    
+        
+
+        %% === Selective Image ===    
         indPrefImg = idUnique(find(idUnique==idMaxHz,1)); % Index in StimulusTemplates at which the preferred image occurs
         current_session = all_units(i).session_count;
         StimulusTemplates = nwbAll{current_session}.stimulus_templates.get('StimulusTemplates') ;
        
-        
         prefPathUnstripped = StimulusTemplates.order_of_images.data(indPrefImg).path; % Loading raw path
         stripPrepPath = split(prefPathUnstripped,'/'); % Stripping fileseps
         prefPath = stripPrepPath{end}; % Grabbing final entry
@@ -370,17 +432,29 @@ for i = 1:length(all_units)%, parforArg)
         image(prefImg);
         pbaspect([4 3 1])
         set(gca,'YTick',[])
-        set(gca,'XTick',[])    
+        set(gca,'XTick',[])
+        xlabel(strrep(prefPath,'_',' '))
         
-        % Plotting Spike pdf
+        %% Plotting Spike pdf
         subplot(2,6,12)
         waveforms = SU.waveforms;
-        [D,AMPs]=spikePDFestimate(waveforms);
+        if size(waveforms,1) > 1 % Plot spike pdf
+            [~,~] = spikePDFestimate(waveforms);
+        else % Only plot mean waveform if that's the only waveform available. 
+            plot(waveforms)
+            xlim([0 length(waveforms)])
+            ylim([min(waveforms)*1.2 max(waveforms)*1.2])
+        end
+        ylabel('\muV')
         set(gca,'XTick',[])
         pbaspect([4 3 1])
         
+        set(gca, 'XTick',0:100:256)
+        set(gca, 'XTickLabel',0:1:256/100)
+        xlabel('Time (ms)')
+        ylabel('\muV')
         
-        % === Formatting Plot ===
+        %% === Formatting Plot ===
         setCommonAxisRange( [axPSTH_Enc1 axPSTH_Enc2 axPSTH_Enc3 ,axPSTH_Maint,axPSTH_Probe], 2 );   % set common Y axis
         setCommonAxisRange( [axRaster_Enc1 axRaster_Enc2 axRaster_Enc3 ,axRaster_Maint,axRaster_Probe], 2 );   % set common Y axis
         fig = gcf;
@@ -396,31 +470,51 @@ for i = 1:length(all_units)%, parforArg)
         axPSTH_Probe.Legend.Position(2) = axPSTH_Probe.Legend.Position(2) - 0.10;
 
 
-
-        % === Export ===
+        %% === Export ===
         if params.exportFig
             % set(gcf,'position',[-1920 817 1920 175])
             if ~isfield(params,'figOut') || isempty(params.figOut)
-            figPath = 'C:\temp\figsSternberg\'; 
+            figPath = 'C:\temp\figsSternberg\test_output'; 
             else
                 figPath = params.figOut;
             end
+            
+            % Append selectivity to folder. Will store in separate folder
+            % for each type. Allows for folders for overlapping cell types.
+            if concept_cells_sb(i)
+                figPath = [figPath '_concept']; %#ok<AGROW>
+            end
+            if maint_cells_sb(i)
+                figPath = [figPath '_maint']; %#ok<AGROW>
+            end
+            if probe_cells_sb(i)
+                figPath = [figPath '_probe']; %#ok<AGROW>
+            end
+
             if ~isfolder(figPath)
                 mkdir(figPath)
             end
-            
             fName = ['SBID_' num2str(subject_id) '_Cell_' num2str(cellID) '_Cl_' num2str(clusterID) '_BA_' brain_area{:}];
-            exportgraphics(gcf, [figPath filesep fName '.png' ])
+            saveas(gcf, [figPath filesep fName '.' params.exportType ],params.exportType)
             fprintf('| Figure Saved')
             close(gcf);
         end
     end
     fprintf('\n') % New line for each cell
 end
+% Comparing concept cells for preferred and non-preferred trials. 
+hzPref_conceptOnly = hzPref(logical(concept_cells_sb));
+hzNonPref_conceptOnly = hzNonPref(logical(concept_cells_sb));
+[~, p_prefNonPref] = ttest(hzPref_conceptOnly,hzNonPref_conceptOnly,'Tail','right','Alpha',alphaLim);
+% p_prefNonPref = permutationTest(hzPref_conceptOnly,hzNonPref_conceptOnly,2000,'sidedness','larger');
+
 fprintf('Total Concept: %d/%d (%.2f%%)\n',sum(concept_cells_sb),length(all_units),sum(concept_cells_sb)/length(all_units)*100)
+fprintf('Persistent Firing : Pref %.2f ± %.2f | Non-Pref %.2f ± %.2f | p = %.4f\n',mean(hzPref_conceptOnly),std(hzPref_conceptOnly),mean(hzNonPref_conceptOnly),std(hzNonPref_conceptOnly), p_prefNonPref )
 fprintf('Total Maint: %d/%d (%.2f%%)\n',sum(maint_cells_sb),length(all_units),sum(maint_cells_sb)/length(all_units)*100)
 fprintf('Total Probe: %d/%d (%.2f%%)\n',sum(probe_cells_sb),length(all_units),sum(probe_cells_sb)/length(all_units)*100)
 sig_cells.concept_cells = concept_cells_sb;
+sig_cells.hzPref = hzPref;
+sig_cells.hzNonPref = hzNonPref;
 sig_cells.maint_cells = maint_cells_sb;
 sig_cells.probe_cells = probe_cells_sb;
 end

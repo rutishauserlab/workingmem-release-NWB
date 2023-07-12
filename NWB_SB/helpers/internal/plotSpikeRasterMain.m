@@ -54,7 +54,7 @@ colorMode=false;
 endtime = [];				% The final time to plot.
 linesflag = 0;				% Line for each spike to sit on?
 spikeheight = 0.7;			% height of spikes
-xlabelstr = 'time [ms]';			% xlabel
+xlabelstr = 'time [seconds]';			% xlabel
 ylabelstr = '';				% ylabel
 fs = [];				% Sampling frequency for sparse
 
