@@ -1,12 +1,12 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
-- family-names: "YOUR_NAME_HERE"
-  given-names: "YOUR_NAME_HERE"
-  orcid: "https://orcid.org/0000-0000-0000-0000"
-- family-names: "Lisa"
-  given-names: "Mona"
-  orcid: "https://orcid.org/0000-0000-0000-0000"
+- family-names: "Kyzar"
+  given-names: "Michael"
+  orcid: "https://orcid.org/0009-0004-4392-9933"
+- family-names: "Rutishauser"
+  given-names: "Ueli"
+  orcid: "https://orcid.org/0000-0002-9207-7069"
 title: "workingmem-release-NWB"
 version: 1.0.0
 doi: 10.5281/zenodo.1234
