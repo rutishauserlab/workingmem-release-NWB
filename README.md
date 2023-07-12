@@ -1,12 +1,12 @@
 # Code for: Dataset of human-single neuron activity during a Sternberg working memory task 
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
-[![Generic badge](https://img.shields.io/badge/release-1.0.0-green.svg)](https://github.com/rutishauserlab/workingmem-release-NWB/releases/)
+[![Generic badge](https://img.shields.io/badge/release-1.0.0-green.svg)](https://github.com/rutishauserlab/workingmem-release-NWB/releases/1.0.0)
 [![Generic badge](https://img.shields.io/badge/DOI-Status_Pending-orange.svg)](https://www.youtube.com/watch?v=MOu4_wpy40U)
 
 ## Introduction
 
-This repository contains tools/methods to import, format, and analyze a sample dataset of human single-neuron electrophysiological and behavioral data. This dataset is formatted entirely in [Neurodata Without Borders (NWB)](https://www.nwb.org/) format. This format that has extensive [documentation](https://nwb-schema.readthedocs.io/en/latest/index.html) and support in both MATLAB and Python environments. 
+This repository contains tools/methods to import, format, and analyze a sample dataset of human single-neuron electrophysiological and behavioral data. This dataset is formatted entirely in [Neurodata Without Borders (NWB)](https://www.nwb.org/) format. This format has extensive [documentation](https://nwb-schema.readthedocs.io/en/latest/index.html) and support in both MATLAB and Python environments. 
 
 This code accompanies the paper: (Citation Pending). [Link to paper](https://www.youtube.com/watch?v=MOu4_wpy40U)
 
@@ -35,7 +35,7 @@ MatNWB version used: 2.6.0.2
 
 ## Installation & File Validation (Python)
 
-
+`dandi version 0.55.1, nwbinspector version 0.4.28, & pynwb 2.3.1.` 
 
 ## Installation (Data)
 
