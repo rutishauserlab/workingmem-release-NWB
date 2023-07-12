@@ -1,12 +1,10 @@
 # Code for: Dataset of human-single neuron activity during a Sternberg working memory task 
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
-
 [![Generic badge](https://img.shields.io/badge/release-1.0.0-green.svg)](https://github.com/rutishauserlab/workingmem-release-NWB/releases/)
+[![Generic badge](https://img.shields.io/badge/DOI-Status_Pending-orange.svg)](https://www.youtube.com/watch?v=MOu4_wpy40U)]
 
-[![Generic badge](https://img.shields.io/badge/DOI-Status_Pending-orange.svg)](https://www.youtube.com/watch?v=dQw4w9WgXcQ)
 ## Introduction
-
 [Neurodata Without Borders](https://www.nwb.org/)
 
 [NWB Format Specification](https://nwb-schema.readthedocs.io/en/latest/index.html)
@@ -19,6 +17,7 @@ Abstract:
 This repository can be downloaded by entering the following commands:
 
 `cd $target_directory`
+
 `git clone https://github.com/rutishauserlab/workingmem-release-NWB.git`
 
 
@@ -26,7 +25,9 @@ This repository can be downloaded by entering the following commands:
 
 Documentation: 
 MatNWB version used: 2.6.0.2
+
 [MatNWB](https://github.com/NeurodataWithoutBorders/matnwb)
+
 [MatNWB Documentation](https://neurodatawithoutborders.github.io/matnwb/)
 
 
@@ -51,7 +52,7 @@ The dataset is available in NWB format from the Dandi Archive, under [Dandiset #
 * [Michael Kyzar](mailto:kyzarnexus@gmail.com)
 * [Ueli Rutishauser](mailto:Ueli.Rutishauser@cshs.org) (Principal Investigator)
 
->(add citation upon manuscript acceptance)
+>(Citation Pending)
 
 ## Funding
 
