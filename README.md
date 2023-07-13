@@ -57,7 +57,7 @@ All validators returned no errors in data formatting & best-use practices across
 
 ## MATLAB Analysis
 
-The main script in this repo, NWB_SB_import_main.m, is designed to analyze the released dataset and to reproduce the figures & metrics noted in Kyzar et. al. 2023 & Kaminski et. al. 2017. It can calculate several metrics related to behavior (reaction time, accuracy), spike sorting, and single-unit (SU) activity during the screening (SC) & Sternberg (SB) tasks.
+The main script in this repo, `NWB_SB_import_main.m`, is designed to analyze the released dataset and to reproduce the figures & metrics noted in Kyzar et. al. 2023 & Kaminski et. al. 2017. It can calculate several metrics related to behavior (reaction time, accuracy), spike sorting, and single-unit (SU) activity during the screening (SC) & Sternberg (SB) tasks.
 
 ### Steps to Use the Script
 * **Set Parameters:** The first section of the script sets important parameters. The `taskFlag` is used to specify which tasks are accessed and are defined as `1` (SCREENING), `2` (STERNBERG), or `3` (BOTH). The `importRange` is the range of subject IDs for the dataset. For the current release, subject IDs have a range of `1:21`. 
