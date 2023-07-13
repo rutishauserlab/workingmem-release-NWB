@@ -2,13 +2,13 @@
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Generic badge](https://img.shields.io/badge/release-1.0.0-green.svg)](https://github.com/rutishauserlab/workingmem-release-NWB/releases/1.0.0)
-[![Generic badge](https://img.shields.io/badge/DOI-Status_Pending-orange.svg)](https://www.youtube.com/watch?v=MOu4_wpy40U)
+[![Generic badge](https://img.shields.io/badge/DOI-Status_Pending-orange.svg)](https://youtu.be/MOu4_wpy40U)
 
 ## Introduction
 
 This repository contains tools/methods to import, format, and analyze a sample dataset of human single-neuron electrophysiological and behavioral data. This dataset is formatted entirely in [Neurodata Without Borders (NWB)](https://www.nwb.org/) format. This format has extensive [documentation](https://nwb-schema.readthedocs.io/en/latest/index.html) and support in both MATLAB and Python environments. 
 
-This code accompanies the paper: (Citation Pending). [Link to paper](https://www.youtube.com/watch?v=MOu4_wpy40U)
+This code accompanies the paper: (Citation Pending). [Link to paper(Pending)](https://youtu.be/MOu4_wpy40U) 
 
 Abstract of the paper:
 >We present a dataset of 1809 single neurons recorded from the human medial temporal lobe (amygdala and hippocampus) and medial frontal lobe (anterior cingulate cortex, pre-supplementary motor area, ventral medial prefrontal cortex) across 41 sessions from 21 patients that underwent intracranial monitoring for epileptic activity. Subjects first performed a screening task (907 neurons), based on which we identified images for which highly selective cells were present in the medial temporal lobe. Subjects then performed a working memory task (902 neurons), in which they were sequentially presented with 1-3 images, and following a maintenance period, were asked if a probe was identical to one of the currently maintained images. This Neurodata Without Borders (NWB) formatted dataset includes spike times, extracellular spike waveforms, stimuli presented, behavior, electrode locations, and subject demographics. As validation, we replicate previous findings on the existence of concept cells and their persistent activity during working memory maintenance.  This dataset provides a substantial amount of rare human single neuron recordings together with behavior, thereby enabling investigation of the neural mechanisms of working memory at the single-neuron level.
@@ -86,7 +86,7 @@ Please make sure to thoroughly read the comments in the code to understand the f
 * [Michael Kyzar](mailto:kyzarnexus@gmail.com)
 * [Ueli Rutishauser](mailto:Ueli.Rutishauser@cshs.org) (Principal Investigator)
 
->([Citation Pending](https://www.youtube.com/watch?v=MOu4_wpy40U))
+>([Citation Pending](https://youtu.be/MOu4_wpy40U))
 
 ## Funding
 
