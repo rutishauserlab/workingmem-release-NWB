@@ -22,24 +22,27 @@ This repository can be downloaded by entering the following commands:
 
 `git clone https://github.com/rutishauserlab/workingmem-release-NWB.git`
 
-
 ## Installation (MatNWB)
 
-Documentation: 
-MatNWB version used: 2.6.0.2
+Running the provided code and analyzing the dataset in MATLAB requires the download and initialization of MatNWB, a MATLAB interface for reading and writing NWB 2.x files. Instructions for how to [download and initialize MatNWB](https://github.com/NeurodataWithoutBorders/matnwb) have been listed on the project's public git repo. Further documentation for how to use MatNWB can be found [here](https://neurodatawithoutborders.github.io/matnwb/). MatNWB version 2.6.0.2 was used for the curation and analysis of this dataset.
 
-[MatNWB](https://github.com/NeurodataWithoutBorders/matnwb)
+## Installation (Data)
 
-[MatNWB Documentation](https://neurodatawithoutborders.github.io/matnwb/)
+The dataset is available in NWB format from the Dandi Archive, under [Dandiset #469](https://dandiarchive.org/dandiset/000469).
 
+
+Dandi datasets are accessible through the Dandi command line interface (CLI). To install this Python client, use `pip install dandi` or `conda install -c conda-forge dandi`, depending on your Python environment setup. 
+
+
+After installing the Dandi CLI, use `dandi download https://dandiarchive.org/dandiset/000469` to download the dataset. 
 
 ## Installation & File Validation (Python)
 
 `dandi version 0.55.1, nwbinspector version 0.4.28, & pynwb 2.3.1.` 
 
-## Installation (Data)
+[PyNWB Documentation](https://pynwb.readthedocs.io/en/stable/)
 
-The dataset is available in NWB format from the Dandi Archive, under [Dandiset #469](https://dandiarchive.org/dandiset/000469).
+
 
 ## MATLAB Analysis
 
