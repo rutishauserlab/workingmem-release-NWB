@@ -19,7 +19,6 @@ Abstract of the paper:
 </p>
 
 
-
 ## Installation (Code)
 
 This repository can be downloaded by entering the following commands:
@@ -49,14 +48,31 @@ After installing the Dandi CLI, use `dandi download https://dandiarchive.org/dan
 [PyNWB Documentation](https://pynwb.readthedocs.io/en/stable/)
 
 
-
 ## MATLAB Analysis
 
+The main script in this repo, NWB_SB_import_main.m, is designed to analyze the released dataset and to reproduce the figures & metrics noted in Kyzar et. al. 2023. It can calculate several metrics related to behavior (reaction time, accuracy), spike sorting, and single-unit (SU) activity during the screening (SC) & Sternberg (SB) tasks.
+
+### Steps to Use the Script
+* **Set Parameters:** The first section of the script sets important parameters. The `taskFlag` is used to specify which tasks are accessed and are defined as `1` (SCREENING), `2` (STERNBERG), or `3` (BOTH). The `importRange` is the range of subject IDs for the dataset. For the current release, subject IDs have a range of `1:21`. 
+
+* **Initialization and Pathing:** The script then defines the directory paths for the code, the currently installed MatNWB package, and the dataset, and then adds them to the MATLAB path. If figures are generated, there is an additional option to add a custom save destination. Please ensure that the defined paths in the script are correct for your setup. This section also uses MatNWB's generateCore() function to initialize the NWB API if it has not been initialized already.
+
+* **Import Datasets From Folder:** The script will then import datasets from the given folder using the `NWB_importFromFolder` function. Only files specified using `importRange` and `taskFlag` will be loaded into the workspace. 
+
+* **Extracting Single Units:** Single unit information is extracted from the loaded NWB files for ease of indexing, using the `NWB_SB_extractUnits` function. If spike waveforms are not needed for analysis, the `load_all_waveforms` flag can be set to `0` to only extract the mean waveform. All future plots will use this mean waveform instead of a spike waveform pdf. 
+
+* **Screening Analysis:** This section is preceded by a parameters section, which allows for the control of various stages of the analysis and plotting process. For example, one can choose to plot figures for significant cells by setting `paramsSC.doPlot = 0` or filter units being used for analysis by specifying a minimum firing rate threshold `paramsSC.rateFilter`. To disable screening analysis of all cells entirely, set `paramsSC.calcSelective = 0`. 
+
+* **Sternberg Analysis:**: This section is also preceded by a parameters section, with additional controls included for the type of cell type to plot (`1`: Concept, `2`: Maint, `3`: Probe, `4`: All). Similar to screening, analysis can be disabled by setting `paramsSB.calcSelective = 0`.
+
+* **Example Neurons:** Additional sections have been added for each task type that optionally plots the example cells found in Kyzar et al 2023 & Kaminski et al 2017. To reduce load times for NWB files, set `importRange = [4 7 15 16 21]` for screening and `importRange = [7 14 16]` for Sternberg.
+
+* **Selectivy by Area:** The script also calculates the proportion of selective cells by area and plots bar/pie charts comparing the screening and Sternberg tasks. This can be disabled by setting `plotAreas = 0`.
+
+* **Spike Sorting Quality Metrics:** This section plots spike sorting metrics for single units recorded in the Sternberg/screening tasks. These metrics include the percentage of inter-spike intervals (ISIs) that were less than 3 ms, mean firing rates for all units, coefficient of variation (CV2) values for all units, signal-to-noise ratio (SNR) of the peak of the mean waveform, mean SNR for all values in a unit’s mean waveform, pairwise projection distance between each unit in which multiple units were found on the same electrode, isolation distance (scaled to log¬10 for ease of viewing) across all units for which this metric was defined.
 
 
-
-
-
+Please make sure to thoroughly read the comments in the code to understand the functionality of each part. If you encounter any problems, please report them as issues in the repository.
 
 
 ## Contributors
