@@ -43,9 +43,16 @@ After installing the Dandi CLI, use `dandi download https://dandiarchive.org/dan
 
 ## Installation & File Validation (Python)
 
-`dandi version 0.55.1, nwbinspector version 0.4.28, & pynwb 2.3.1.` 
+NWB Files can additionally be loaded and analyzed using the [PyNWB](https://github.com/NeurodataWithoutBorders/pynwb) python package. Further documentation can be found [here](https://pynwb.readthedocs.io/en/stable/). 
 
-[PyNWB Documentation](https://pynwb.readthedocs.io/en/stable/)
+
+Validation of this dataset was performed using PyNWB (2.3.1) and PyNWB-dependent packages, such as nwbinspector (0.4.28) and dandi (0.55.1). The command lines used for each method are as follows:
+* dandi: `dandi validate $target_directory`
+* nwbinspector: `nwbinspector $target_directory`
+* PyNWB: `python -m pynwb.validate $target_directory`
+  <!--- Test the PyNWB method again. There seems to be an access error --->
+
+All validators returned no errors in data formatting & best-use practices across all uploaded files. 
 
 
 ## MATLAB Analysis
