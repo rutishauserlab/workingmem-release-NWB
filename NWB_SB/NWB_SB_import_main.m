@@ -15,10 +15,10 @@ clear; clc; close all
 fs = filesep;
 %% Parameters
 
-% Operation Flags: Should either be  'SCREENING' (1), 'STERNBERG' (2),or 'BOTH' (3)
+% Operation Flags: Should either be  '1' (SCREENING), '2' (STERNBERG), or '3' (BOTH)
 taskFlag = 3;
 
-% subject IDs for dataset. Empty defaults to all available subjects.
+% subject IDs for dataset.
 importRange = 1:21; % Dataset: Kyzar et al 2023
 % importRange = [7 14 16]; % Sternberg Examples
 % importRange = [4 7 15 16 21]; % Screening Examples
@@ -58,9 +58,6 @@ else
 end 
 
 %% Importing Datasets From Folder
-% Note: Parallel loading is not yet supported due to the pools referencing
-% matnwb files that are initialized outside the main matnwb folder. Could
-% be a suggestion for future releases of matnwb. 
 switch taskFlag
     case 1 % Screening
         internalFlag = taskFlag;
@@ -97,9 +94,9 @@ end
 
 %% SCREENING Params
 paramsSC.doPlot = 0; % if =1, plot significant cells. 
-paramsSC.plotAlways = 0;
+paramsSC.plotAlways = 0; % Plot regardless of selectivity (warning: generates a lot of figures unless exportFig=1)
 paramsSC.exportFig = 0;
-paramsSB.exportType = 'png';
+paramsSB.exportType = 'png'; % File type for export. 'png' is the default. 
 paramsSC.rateFilter = []; % Rate filter in Hz
 paramsSC.figOut = [paths.figOut fs 'stats_screening_concept_example_eps'];
 %% SCREENING Stats. Loops over all cells. 
@@ -148,27 +145,6 @@ if any(taskFlag == [2,3]) && paramsSB.calcSelective
     fprintf('SB: Maint Cells %d/%d\n',sum(sig_cells_sb.maint_cells),length(sig_cells_sb.maint_cells))
     fprintf('SB: Probe Cells %d/%d\n',sum(sig_cells_sb.probe_cells),length(sig_cells_sb.probe_cells))
 end
-
-
-
-%% Plot Example Cells:
-% This section plots example cells shown in the papers about this dataset (Sternberg task part)
-
-% Kaminski 2017, Fig. 3A
-%NWB_plotCell_SternbergMaintask(...)
-
-% Kaminski 2017, Fig. 3B
-% Kaminski 2020, Fig. 1E-G
-% Kyzar et al 2023, Fig. XX
-
-%% Plot specific example cells shown in paper (Screening task)
-% This section plots example cells shown in the papers about this dataset (Screening task part)
-
-% Kaminski 2017, Fig. S1A,  top
-
-% Kyzar et al 2023, Fig. XX
-
-
 
 %% Plot Significant Areas
 plotAreas = 1;
@@ -269,7 +245,7 @@ if any(taskFlag == [2,3]) && calcMetrics
     movegui(QAfig_sb,'west') 
     QAfig_sb.WindowState = 'maximized';
 end
-if any(taskFlag == [1,3]) && calcMetrics
+if any(taskFlag == [1,3]) && calcMetrics % Calc metrics for Screening, no behavior
     % Kyzar et. al. 2023, Figure 3.a-h
     is_sternberg = false;
     QAfig_sc = NWB_QA_graphs(nwbAll_sc, all_units_sc, is_sternberg);
