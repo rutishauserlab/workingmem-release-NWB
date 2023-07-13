@@ -13,6 +13,14 @@ This code accompanies the paper: (Citation Pending). [Link to paper](https://www
 Abstract of the paper:
 >We present a dataset of 1809 single neurons recorded from the human medial temporal lobe (amygdala and hippocampus) and medial frontal lobe (anterior cingulate cortex, pre-supplementary motor area, ventral medial prefrontal cortex) across 41 sessions from 21 patients that underwent intracranial monitoring for epileptic activity. Subjects first performed a screening task (907 neurons), based on which we identified images for which highly selective cells were present in the medial temporal lobe. Subjects then performed a working memory task (902 neurons), in which they were sequentially presented with 1-3 images, and following a maintenance period, were asked if a probe was identical to one of the currently maintained images. This Neurodata Without Borders (NWB) formatted dataset includes spike times, extracellular spike waveforms, stimuli presented, behavior, electrode locations, and subject demographics. As validation, we replicate previous findings on the existence of concept cells and their persistent activity during working memory maintenance.  This dataset provides a substantial amount of rare human single neuron recordings together with behavior, thereby enabling investigation of the neural mechanisms of working memory at the single-neuron level.
 
+<p align="center">
+  <img width="400" height="500" src="https://github.com/rutishauserlab/workingmem-release-NWB/blob/main/assets/git_task_overview_white.png">
+</p>
+<p align="center">
+  <img width="400" height="500" src="https://github.com/rutishauserlab/workingmem-release-NWB/blob/main/assets/git_brain_areas.png">
+</p>
+
+
 
 ## Installation (Code)
 
