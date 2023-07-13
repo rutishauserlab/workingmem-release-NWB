@@ -57,7 +57,7 @@ After installing the Dandi CLI, use `dandi download https://dandiarchive.org/dan
 * [Michael Kyzar](mailto:kyzarnexus@gmail.com)
 * [Ueli Rutishauser](mailto:Ueli.Rutishauser@cshs.org) (Principal Investigator)
 
->(Citation Pending)
+>([Citation Pending](https://www.youtube.com/watch?v=MOu4_wpy40U))
 
 ## Funding
 
