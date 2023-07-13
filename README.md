@@ -1,4 +1,4 @@
-# Code for: Dataset of human-single neuron activity during a Sternberg working memory task 
+# Source code for: Dataset of human-single neuron activity during a Sternberg working memory task 
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Generic badge](https://img.shields.io/badge/release-1.0.0-green.svg)](https://github.com/rutishauserlab/workingmem-release-NWB/releases/1.0.0)
