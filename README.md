@@ -15,8 +15,6 @@ Abstract of the paper:
 
 <p align="center">
   <img width="400" height="500" src="https://github.com/rutishauserlab/workingmem-release-NWB/blob/main/assets/git_task_overview_white.png">
-</p>
-<p align="center">
   <img width="400" height="500" src="https://github.com/rutishauserlab/workingmem-release-NWB/blob/main/assets/git_brain_areas.png">
 </p>
 
