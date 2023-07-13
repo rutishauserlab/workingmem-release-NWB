@@ -26,12 +26,12 @@ importRange = 1:21; % Dataset: Kyzar et al 2023
 % importRange = 1:20; % Dataset: Kaminski et al 2020
 
 %% Initializing and pathing
-paths.baseData = 'Z:\LabUsers\kyzarm\data\NWB_SB\data_Dandiset\000469'; % Dataset directory
+paths.baseData = 'C:\data\000469'; % Dataset directory
 paths.nwb_sb = paths.baseData; % Dandiset Directory
 paths.nwb_sc = paths.baseData; % Dandiset Directory
-paths.code = 'C:\svnwork\neuro1\code\events\Sternberg\NWB-SB\NWB_SB_import_release';
-paths.matnwb = 'C:\svnwork\matnwb-2.6.0.2';
-paths.figOut = ['Z:\LabUsers\kyzarm\data\NWB_SB' fs 'figures'];
+paths.code = 'C:\repos\workingmem-release-NWB';
+paths.matnwb = 'C:\repos\matnwb-2.6.0.2';
+paths.figOut = ['C:\temp' fs 'figures'];
 
 % Helpers
 if(~isdeployed) 
