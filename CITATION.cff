@@ -7,7 +7,7 @@ authors:
 - family-names: "Rutishauser"
   given-names: "Ueli"
   orcid: "https://orcid.org/0000-0002-9207-7069"
-title: "workingmem-release-NWB"
+title: "Source code for: Dataset of human-single neuron activity during a Sternberg working memory task"
 version: 1.0.0
 doi: 10.5281/zenodo.1234
 date-released: 2023-07-12
