@@ -6,7 +6,7 @@
 
 ## Introduction
 
-This repository contains tools/methods to import, format, and analyze a sample dataset of human single-neuron electrophysiological and behavioral data. This dataset is formatted entirely in [Neurodata Without Borders (NWB)](https://www.nwb.org/) format. This format has extensive [documentation](https://nwb-schema.readthedocs.io/en/latest/index.html) and support in both MATLAB and Python environments. 
+This repository contains tools/methods to import, format, and analyze a sample dataset of human single-neuron electrophysiological and the associated behavioral data. This dataset is formatted entirely in [Neurodata Without Borders (NWB)](https://www.nwb.org/) format. This format has extensive [documentation](https://nwb-schema.readthedocs.io/en/latest/index.html) and support in both MATLAB and Python environments. 
 
 This code accompanies the paper: (Citation Pending). [Link to paper(Pending)](https://youtu.be/MOu4_wpy40U) 
 
