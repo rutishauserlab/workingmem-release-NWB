@@ -97,7 +97,7 @@ Acquisition of this dataset has been supported by the National Institute of Ment
 
 ## License 
 
-"workingmem-release-NWB" Copyright (c) 2019, Rutishauser Lab. All rights reserved.
+"workingmem-release-NWB" Copyright (c) 2023, Rutishauser Lab. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
