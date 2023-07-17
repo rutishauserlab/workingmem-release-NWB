@@ -49,7 +49,7 @@ NWB Files can additionally be loaded and analyzed using the [PyNWB](https://gith
 Validation of this dataset was performed using PyNWB (2.3.1) and PyNWB-dependent packages, such as nwbinspector (0.4.28) and dandi (0.55.1). The command lines used for each method are as follows:
 * dandi: `dandi validate $target_directory`
 * nwbinspector: `nwbinspector $target_directory`
-* PyNWB: `python -m pynwb.validate $target_directory`
+* PyNWB: `Get-ChildItem $target_directory -Filter *.nwb -Recurse | % { $_.FullName }; python -m pynwb.validate $file_list`
   <!--- Test the PyNWB method again. There seems to be an access error --->
 
 All validators returned no errors in data formatting & best-use practices across all uploaded files. 
