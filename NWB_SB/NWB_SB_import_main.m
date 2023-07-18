@@ -3,7 +3,7 @@
 % - Behavioral metrics
 % - Spike sorting metrics
 % - SU selectivity metrics (SB)
-% - SU selectivity metrics (SC)c
+% - SU selectivity metrics (SC)
 %
 % SB refers to sternberg main task, and SC to sternberg screen task
 % throughout.
@@ -16,11 +16,11 @@ fs = filesep;
 %% Parameters
 
 % Operation Flags: Should either be  '1' (SCREENING), '2' (STERNBERG), or '3' (BOTH)
-taskFlag = 3;
+taskFlag = 2;
 
 % subject IDs for dataset.
-importRange = 1:21; % Dataset: Kyzar et al 2023
-% importRange = [7 14 16]; % Sternberg Examples
+% importRange = 1:21; % Full Dataset: Kyzar et al 2023
+importRange = [7 14 16]; % Sternberg Examples
 % importRange = [4 7 15 16 21]; % Screening Examples
 % importRange = 6:19; % Dataset: Kaminski et al 2017 
 % importRange = 1:20; % Dataset: Kaminski et al 2020
@@ -93,27 +93,27 @@ switch taskFlag
 end
 
 %% SCREENING Params
-paramsSC.doPlot = 0; % if =1, plot significant cells. 
+paramsSC.doPlot = 1; % if =1, plot significant cells. 
 paramsSC.plotAlways = 0; % Plot regardless of selectivity (warning: generates a lot of figures unless exportFig=1)
 paramsSC.exportFig = 0;
 paramsSB.exportType = 'png'; % File type for export. 'png' is the default. 
 paramsSC.rateFilter = []; % Rate filter in Hz
 paramsSC.figOut = [paths.figOut fs 'stats_screening_concept_example_eps'];
 %% SCREENING Stats. Loops over all cells. 
-paramsSC.calcSelective = 1;
+paramsSC.calcSelective = 0;
 if any(taskFlag == [1,3]) && paramsSC.calcSelective
     [sig_cells_sc, areas_sc] = NWB_calcSelective_SC(nwbAll_sc,all_units_sc,paramsSC);
 end
 %% SCREENING Examples. Loops over cells in Kyzar et al 2023. 
 % For speed, specify the import range as [4 7 15 16 21] beforehand.
-paramsSC.processExamples = 0;
+paramsSC.processExamples = 1;
 if any(taskFlag == [1,3]) && paramsSC.processExamples
     % Kyzar et. al. 2023, Figure 5
     [sig_cells_sc_examples, areas_sc_examples] = NWB_SB_plotCell_Screening(nwbAll_sc,all_units_sc,paramsSC);
 end
 
 %% STERNBERG Params
-paramsSB.doPlot = 0;  % if =1, plot significant cells. 
+paramsSB.doPlot = 1;  % if =1, plot significant cells. 
 paramsSB.plotAlways = 0; % Plot regardless of selectivity (warning: generates a lot of figures unless exportFig=1)
 paramsSB.plotMode = 1; % Which cell type to plot (1: Concept, 2: Maint, 3: Probe, 4: All)
 paramsSB.exportFig = 0; 
@@ -122,7 +122,7 @@ paramsSB.rateFilter =  0; % Rate filter in Hz. Setting to zero disables the filt
 paramsSB.figOut = [paths.figOut fs 'stats_sternberg'];
 
 %% STERNBERG Stats Loops over all cells. 
-paramsSB.calcSelective = 1;
+paramsSB.calcSelective = 0;
 paramsSB.plotMode = 1; % Specify which type of cell to plot if only params.doPlot is 1 (1: Concept, 2: Maint, 3: Probe, 4: All types)
 if any(taskFlag == [2,3]) && paramsSB.calcSelective
     [sig_cells_sb, areas_sb] = NWB_calcSelective_SB(nwbAll_sb,all_units_sb,paramsSB);
@@ -130,7 +130,7 @@ end
 
 %% STERNBERG Examples. Loops over cells in Kyzar et al 2023. 
 % For speed, specify the import range as [7 14 16] beforehand.
-paramsSB.processExamples = 0;
+paramsSB.processExamples = 1;
 if any(taskFlag == [2,3]) && paramsSB.processExamples
     [sig_cells_sc, areas_sc] = NWB_SB_plotCell_Sternberg(nwbAll_sb,all_units_sb,paramsSB);
 end
@@ -147,7 +147,7 @@ if any(taskFlag == [2,3]) && paramsSB.calcSelective
 end
 
 %% Plot Significant Areas
-plotAreas = 1;
+plotAreas = 0;
 if taskFlag == 3 && plotAreas
     
     [sb_areaCount_all, sb_labels_sig, sb_areaCount_sig, sb_labels_tot] = NWB_countAreas(areas_sb,sig_cells_sb.concept_cells);
@@ -197,7 +197,7 @@ if taskFlag == 3 && plotAreas
     ax = gca();
     ax.Colormap = colormap;
 
-    %% Proportion of Selective Cells (Kyzar et al 2023, Technical Validation)
+    %% Proportion of Selective Cells (Kyzar et al , Technical Validation)
 
     % SB: MTL Concept
     findMTL = find(contains(sb_labels_sig,'Amg') + contains(sb_labels_sig,'Hipp'));
@@ -233,10 +233,10 @@ if taskFlag == 3 && plotAreas
 
 end
 
-%% Calculate Spike Sorting Metrics (Sternberg only)
-calcMetrics = 1;
+%% Calculate Spike Sorting Metrics 
+calcMetrics = 0;
 if any(taskFlag == [2,3]) && calcMetrics
-    % Kyzar et. al. 2023, Figure 3.a-h
+    % Kyzar et. al., Figure 3.a-h
     is_sternberg = true;
     QAfig_sb = NWB_QA_graphs(nwbAll_sb, all_units_sb, is_sternberg);
     QAfig_sb.set("Visible","on")
@@ -246,7 +246,7 @@ if any(taskFlag == [2,3]) && calcMetrics
     QAfig_sb.WindowState = 'maximized';
 end
 if any(taskFlag == [1,3]) && calcMetrics % Calc metrics for Screening, no behavior
-    % Kyzar et. al. 2023, Figure 3.a-h
+    % Kyzar et. al., Figure 3.a-h
     is_sternberg = false;
     QAfig_sc = NWB_QA_graphs(nwbAll_sc, all_units_sc, is_sternberg);
     QAfig_sc.set("Visible","on")
