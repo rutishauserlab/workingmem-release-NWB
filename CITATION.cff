@@ -9,6 +9,6 @@ authors:
   orcid: "https://orcid.org/0000-0002-9207-7069"
 title: "Source code for: Dataset of human-single neuron activity during a Sternberg working memory task"
 version: 1.0.0
-doi: 10.5281/zenodo.1234
+doi: 10.5281/zenodo.8161627
 date-released: 2023-07-12
 url: "https://github.com/rutishauserlab/workingmem-release-NWB"
