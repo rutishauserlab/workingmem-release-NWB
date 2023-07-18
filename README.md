@@ -8,10 +8,11 @@
 
 This repository contains the code that accompanies our data release Kyzar et al. 'Dataset of human-single neuron activity during a Sternberg working memory task'. The purpose of the code in this repository is to provide examples of how to use the released data. This dataset is formatted in the [Neurodata Without Borders (NWB)](https://www.nwb.org/) format, which can easily be accessed from both MATLAB and Python as described [here](https://nwb-schema.readthedocs.io/en/latest/index.html) . 
 
-This code accompanies the following data descriptor: (Citation Pending). [Link to paper(Pending)](https://youtu.be/MOu4_wpy40U) 
+This code accompanies the following data descriptor: [Citation Pending]. [Link to Paper (Pending)](https://youtu.be/MOu4_wpy40U) 
 
 The papers that describe the scientific results that are based on this dataset are:
-(add here Kaminski 2017, 2020)
+* Kamiński, J. et al. Persistently active neurons in human medial frontal and medial temporal lobe support working memory. Nature Neuroscience 20, 590-601 (2017). https://doi.org:10.1038/nn.4509
+* Kamiński, J., Brzezicka, A., Mamelak, A. N. & Rutishauser, U. Combined Phase-Rate Coding by Persistently Active Neurons as a Mechanism for Maintaining Multiple Items in Working Memory in Humans. Neuron 106, 256-264.e253 (2020). https://doi.org:10.1016/j.neuron.2020.01.032
 
 Abstract of the paper:
 >We present a dataset of 1809 single neurons recorded from the human medial temporal lobe (amygdala and hippocampus) and medial frontal lobe (anterior cingulate cortex, pre-supplementary motor area, ventral medial prefrontal cortex) across 41 sessions from 21 patients that underwent intracranial monitoring for epileptic activity. Subjects first performed a screening task (907 neurons), based on which we identified images for which highly selective cells were present in the medial temporal lobe. Subjects then performed a working memory task (902 neurons), in which they were sequentially presented with 1-3 images, and following a maintenance period, were asked if a probe was identical to one of the currently maintained images. This Neurodata Without Borders (NWB) formatted dataset includes spike times, extracellular spike waveforms, stimuli presented, behavior, electrode locations, and subject demographics. As validation, we replicate previous findings on the existence of concept cells and their persistent activity during working memory maintenance.  This dataset provides a substantial amount of rare human single neuron recordings together with behavior, thereby enabling investigation of the neural mechanisms of working memory at the single-neuron level.
@@ -52,7 +53,7 @@ NWB Files can additionally be loaded and analyzed using the [PyNWB](https://gith
 Validation of this dataset was performed using PyNWB (2.3.1) and PyNWB-dependent packages, such as nwbinspector (0.4.28) and dandi (0.55.1). The command lines used for each method are as follows:
 * dandi: `dandi validate $target_directory`
 * nwbinspector: `nwbinspector $target_directory`
-* PyNWB: `Get-ChildItem $target_directory -Filter *.nwb -Recurse | % { $_.FullName }; python -m pynwb.validate $file_list`
+* PyNWB: `$file_list = Get-ChildItem $target_directory -Filter *.nwb -Recurse | % { $_.FullName }; python -m pynwb.validate $file_list`
   <!--- Test the PyNWB method again. There seems to be an access error --->
 
 All validators returned no errors in data formatting & best-use practices across all uploaded files. 
@@ -89,7 +90,7 @@ Please make sure to thoroughly read the comments in the code to understand the f
 * [Michael Kyzar](mailto:kyzarnexus@gmail.com)
 * [Ueli Rutishauser](mailto:Ueli.Rutishauser@cshs.org) (Principal Investigator)
 
->([Citation Pending](https://youtu.be/MOu4_wpy40U))
+>[[Citation Pending](https://youtu.be/MOu4_wpy40U)]
 
 ## Funding
 
