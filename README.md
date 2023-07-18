@@ -2,11 +2,11 @@
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Generic badge](https://img.shields.io/badge/release-1.0.0-green.svg)](https://github.com/rutishauserlab/workingmem-release-NWB/releases/1.0.0)
-[![Generic badge](https://img.shields.io/badge/DOI-Status_Pending-orange.svg)](https://youtu.be/MOu4_wpy40U)
+[![Generic badge](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.8161627-orange.svg)](10.5281/zenodo.8161627)
 
 ## Introduction
 
-This repository contains the code that accompanies our data release Kyzar et al. 'Dataset of human-single neuron activity during a Sternberg working memory task'. The purpose of the code in this repository is to provide examples of how to use the released data. This dataset is formatted in the [Neurodata Without Borders (NWB)](https://www.nwb.org/) format, which can easily be accessed from both MATLAB and Python as described [here](https://nwb-schema.readthedocs.io/en/latest/index.html) . 
+This repository contains the code that accompanies our data release Kyzar et al. 'Dataset of human-single neuron activity during a Sternberg working memory task'. The purpose of the code in this repository is to provide examples of how to use the released data. This dataset is formatted in the [Neurodata Without Borders (NWB)](https://www.nwb.org/) format, which can easily be accessed from both MATLAB and Python as described [here](https://nwb-schema.readthedocs.io/en/latest/index.html). 
 
 This code accompanies the following data descriptor: [Citation Pending]. [Link to Paper (Pending)](https://youtu.be/MOu4_wpy40U) 
 
