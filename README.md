@@ -94,7 +94,7 @@ Please make sure to thoroughly read the comments in the code to understand the f
 
 ## Funding
 
-Acquisition of this dataset has been supported by the National Institute of Mental Health (R01MH110831) and the National Institute of Neurological Disorders and Stroke (U01NS117839, U01NS098961)
+Acquisition of this dataset has been supported by the National Institute of Mental Health (R01MH110831) and the National Institute of Neurological Disorders and Stroke (U01NS117839, U01NS098961).
 
 ## License 
 
