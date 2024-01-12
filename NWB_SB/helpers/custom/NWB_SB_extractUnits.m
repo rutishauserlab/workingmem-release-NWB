@@ -9,9 +9,14 @@ all_units = {};
 for i=1:length(nwbAll)
     unit_ids = num2cell(nwbAll{i}.units.id.data.load() + 1); % Convert to 1-based indexing
     session_count = num2cell(i.*ones(length(unit_ids),1));
-    subject_id = num2cell(str2double(nwbAll{i}.general_subject.subject_id).*ones(length(unit_ids),1));
+    subject_id = cell(length(unit_ids),1); for j = 1:length(subject_id); subject_id{j} = nwbAll{i}.general_subject.subject_id; end
+    session_id = cell(length(unit_ids),1); for j = 1:length(session_id); session_id{j} = nwbAll{i}.general_session_id; end
+    identifier = cell(length(unit_ids),1); for j = 1:length(identifier); identifier{j} = nwbAll{i}.identifier; end
     electrodes_ind = num2cell(nwbAll{i}.units.electrodes.data.load() + 1); % Convert to 1-based indexing
-    fprintf('Loading SUs: Subject ID %d (%d/%d)...',subject_id{1},i,length(nwbAll))
+    electrode_areas = cellstr(nwbAll{i}.general_extracellular_ephys_electrodes.vectordata.get('location').data.load());
+    unit_areas = electrode_areas([electrodes_ind{:}]);
+    
+    fprintf('Loading SUs: Subject ID %s (%d/%d)...',subject_id{1},i,length(nwbAll))
     
 
     % Organize spike times
@@ -53,9 +58,9 @@ for i=1:length(nwbAll)
     end
 
 
-    session_units = horzcat(session_count,subject_id,unit_ids,electrodes_ind,spike_times_cells, wf_cells);
+    session_units = horzcat(session_count,subject_id,session_id,identifier,unit_ids,electrodes_ind,unit_areas,spike_times_cells, wf_cells);
     all_units = vertcat(all_units,session_units); %#ok<AGROW>
     fprintf(' Loaded \n')
 end
-all_units = cell2struct(all_units,{'session_count','subject_id','unit_id','electrodes','spike_times','waveforms'},2); % << Follows this column title format.
+all_units = cell2struct(all_units,{'session_count','subject_id','session_id','identifier','unit_id','electrodes','unit_area','spike_times','waveforms'},2); % << Follows this column title format.
 end
