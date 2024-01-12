@@ -1,4 +1,4 @@
-function [QA] = NWB_QA_graphs(nwbAll,units, plot_behavior)
+function [QA] = NWB_QA_graphs(nwbAll,units, is_sternberg)
 % NWB_QA_graphs Generates behavioral and spike sorting metrics used in the SB
 % data release. 
 % nwbAll: A cell arrays containing all nwb files in the dataset 
@@ -10,7 +10,7 @@ function [QA] = NWB_QA_graphs(nwbAll,units, plot_behavior)
 QA = figure("Visible","on");
 sessionCount = length(nwbAll);
 
-if plot_behavior % If Sternberg, give behavioral plots
+if is_sternberg % If Sternberg, give behavioral plots
     %% Accuracy
     accTotals = zeros(sessionCount,1);
     for i = 1:length(accTotals)
@@ -26,12 +26,11 @@ if plot_behavior % If Sternberg, give behavioral plots
     plot(1:length(accTotals), zeros(length(accTotals),1) + mean(accTotals)-acc_sem,'b','LineWidth',1)
     plot(1:length(accTotals), zeros(length(accTotals),1) + mean(accTotals)+acc_sem,'b','LineWidth',1)
     
-    title(sprintf('Accuracy: \\mu=%.2f \\sigma=%.2f',mean(accTotals),std(accTotals)))
+    title(sprintf('Accuracy: \\mu=%.2f SE=%.2f',mean(accTotals),acc_sem))
     xlabel('Session no.')
     ylabel('Accuracy (%)')
     xlim([0 length(accTotals)+1])
-    if min(accTotals)-5 < 50; y_min_acc = 0; else; y_min_acc = 50;
-    ylim([y_min_acc 100])
+    ylim([min(accTotals)-5 100])
     if sessionCount>1; xticks([1 sessionCount]); end
     set(gca,'FontSize',13)
     hold off;
@@ -57,43 +56,41 @@ if plot_behavior % If Sternberg, give behavioral plots
     
     % Median RTs
     anovanSet = double.empty(0,3);
-    RTmedians_all = zeros(sessionCount,2);
+    RTmedians_all = zeros(sessionCount,3);
     for i = 1:sessionCount % Accesses RT column in 3rd row
         RTs_session = RTs_all(RTs_all(:,1)==i,:);
         RT_1 = median(RTs_session(RTs_session(:,2)==1,3));
+        RT_2 = median(RTs_session(RTs_session(:,2)==2,3));
         RT_3 = median(RTs_session(RTs_session(:,2)==3,3));
-        RTmedians_all(i,:) = [RT_1, RT_3];
-        anovanSet = vertcat(anovanSet,horzcat([i i]',[1 3]',RTmedians_all(i,:)')); %#ok<AGROW>
+        RTmedians_all(i,:) = [RT_1, RT_2, RT_3];
+        anovanSet = vertcat(anovanSet,horzcat([i i i]',[1 2 3]',RTmedians_all(i,:)')); %#ok<AGROW>
     end
     
     % ANOVAN 
     grp = { anovanSet(:,1), anovanSet(:,2)};
-    [p_anova,tbl_anova_acc,~] = anovan( anovanSet(:,3), grp, 'random',1,'varnames',{'sessionID','Load'}, 'model','interaction','display','off');
+    [p_anova,tbl_anova_acc,~] = anovan( anovanSet(:,3), grp, 'random',1,'varnames',{'sessionID','Load'}, 'model','linear','display','off');
     
     % Plot RTs
     figRT = subplot(2,5,10); %#ok<NASGU>
     for i = 1:size(RTmedians_all,1)
-        plot([1 3],RTmedians_all(i,:),'k.-.','MarkerSize',10); hold on
+        plot([1 2 3],RTmedians_all(i,:),'k.-.','MarkerSize',10); hold on
     end
     title('Median RT')
     xlabel(sprintf('Load | F_{%d,%d}: %.4f | p: %.4f',... 
         tbl_anova_acc{3,3},tbl_anova_acc{4,3},tbl_anova_acc{3,6},tbl_anova_acc{3, 7}))
     ylabel('Reaction Time (s)')
     xlim([.5 3.5])
-    xticks([1 3])
-    % y_lim_old = min(RTmedians_all(:))-0.25; % Old lower bound. Not used for pub
-    ylim([0 max(RTmedians_all(:))+0.25])
+    xticks([1 2 3])
+    ylim([min(RTmedians_all(:))-0.25 max(RTmedians_all(:))+0.25])
     yticks([0.5 1 1.5 2])
     
     % SEM bars
-    loads = unique(anovanSet(:,2));
     for i = 1:size(RTmedians_all,2)
-        loadX = loads(i);
         semRT = std(RTmedians_all(:,i))/sqrt(length(RTmedians_all(:,i)));
         offset = 0.25;
-        plot([loadX-offset loadX+offset], [mean(RTmedians_all(:,i)) mean(RTmedians_all(:,i))],'b-','LineWidth',1.5)
-        plot([loadX-offset loadX+offset], [mean(RTmedians_all(:,i)) mean(RTmedians_all(:,i))] + semRT,'b-','LineWidth',1)
-        plot([loadX-offset loadX+offset], [mean(RTmedians_all(:,i)) mean(RTmedians_all(:,i))] - semRT,'b-','LineWidth',1)
+        plot([i-offset i+offset], [mean(RTmedians_all(:,i)) mean(RTmedians_all(:,i))],'b-','LineWidth',1.5)
+        plot([i-offset i+offset], [mean(RTmedians_all(:,i)) mean(RTmedians_all(:,i))] + semRT,'b-','LineWidth',1)
+        plot([i-offset i+offset], [mean(RTmedians_all(:,i)) mean(RTmedians_all(:,i))] - semRT,'b-','LineWidth',1)
     end
     set(gca,'FontSize',13)
     hold off;
@@ -101,20 +98,13 @@ end
 %% Spike Sorting Metrics
 % Aggregating timestamps across session types. 
 total_ts = {units(:).spike_times}; 
-total_chan = [units(:).session_count;units(:).electrodes]';
-
-%  Filter clusters with 3 or less spikes
-thresh = 3;
-meets_threshold = cell2mat(cellfun(@(x) length(x)>thresh,total_ts,'UniformOutput',false));
-total_ts = total_ts(meets_threshold);
-total_chan = total_chan(meets_threshold,:);
+total_chan = [units(:).subject_id;units(:).electrodes]';
 
 ISI_sub3 = NaN(length(total_ts),1);
 mean_rate = NaN(length(total_ts),1);
 CV2s = NaN(length(total_ts),1);
 % ts Metrics
 for i = 1:length(total_ts) % Summary Over all sessions
-    fprintf('Compiling metrics (cell %d)\n',i)
     ts = total_ts{i}; % Import & Offset
     % ISI
     ts_isi = ts.*1e3; % Convert to ms
@@ -127,17 +117,9 @@ for i = 1:length(total_ts) % Summary Over all sessions
     ts_cv2 = ts;
     isi_cv2 = diff(ts_cv2);
     ignoreMode = 1;
-    try
-        [CV2, ~, ~, ~] = calcCV2(isi_cv2, ignoreMode);
-    catch e
-        fprintf('Error found for cell %d in total_ts\n', i)
-        error(e.message)
-    end
-
+    [CV2, ~, ~, ~] = calcCV2(isi_cv2, ignoreMode);
     CV2s(i) = CV2;
 end
-% Filter NaNs in CV2 (for very few spikes in cluster)
-CV2s = CV2s(~isnan(CV2s));
 
 % Channel Metrics
 chanFreq = [];
@@ -190,8 +172,8 @@ xticks(1:(max(chanFreq)))
 isiPlot = subplot(2,5,2); %#ok<NASGU>
 thresh_isi = [4]; %#ok<NBRAK2>
 if ~isempty(thresh_isi); ISI_sub3_filtered = ISI_sub3(ISI_sub3<thresh_isi); else; ISI_sub3_filtered = ISI_sub3; end
-histogram(ISI_sub3_filtered,100,'FaceColor',colors{1},'FaceAlpha',1)
-xlim([0 8])
+histogram(ISI_sub3_filtered,40,'FaceColor',colors{1},'FaceAlpha',1)
+xlim([0 4])
 title(sprintf('ISI<3%%: \\mu=%.2f \\sigma=%.2f',mean(ISI_sub3_filtered),std(ISI_sub3_filtered)))
 xlabel('Percent of Interspike Intervals (ISI) < 3 ms')
 ylabel('nr Units')
@@ -201,9 +183,9 @@ set(gca,'FontSize',13)
 hzPlot = subplot(2,5,3); %#ok<NASGU>
 thresh_Hz = [];
 if ~isempty(thresh_Hz); mean_rate_filtered = ISI_sub3(mean_rate < thresh_Hz); else; mean_rate_filtered = mean_rate; end
-histogram(mean_rate_filtered,100,'FaceColor',colors{1},'FaceAlpha',1)
-xlim([0 25])
-title(sprintf('Hz: \\mu=%.2f \\sigma=%.2f',mean(mean_rate_filtered(~isinf(mean_rate_filtered)),'omitnan'),std(mean_rate_filtered(~isinf(mean_rate_filtered)),'omitnan')))
+histogram(mean_rate_filtered,40,'FaceColor',colors{1},'FaceAlpha',1)
+xlim([0 40])
+title(sprintf('Hz: \\mu=%.2f \\sigma=%.2f',mean(mean_rate_filtered),std(mean_rate_filtered)))
 xlabel('Firing Rate (Hz)')
 ylabel('nr Units')
 set(gca,'FontSize',13)
@@ -212,19 +194,19 @@ set(gca,'FontSize',13)
 cv2Plot = subplot(2,5,4); %#ok<NASGU>
 thresh_cv2 = [];
 if ~isempty(thresh_cv2); CV2s_filtered = CV2s(CV2s < thresh_cv2); else; CV2s_filtered = CV2s; end
-CV2s_filtered = CV2s_filtered(~isnan(CV2s_filtered));
-histogram(CV2s_filtered,100,'FaceColor',colors{1},'FaceAlpha',1)
+histogram(CV2s_filtered,40,'FaceColor',colors{1},'FaceAlpha',1)
 % cdfplot(CV2s_filtered)
-title(sprintf('CV2: \\mu=%.2f \\sigma=%.2f',mean(CV2s,'omitnan'),std(CV2s,'omitnan')))
+title(sprintf('CV2: \\mu=%.2f \\sigma=%.2f',mean(CV2s),std(CV2s)))
 xlabel('CV2')
 xlim([0 2])
 ylabel('nr Units')
 set(gca,'FontSize',13)
+% set(gca,'XScale','log')
 
 % Plot: Waveform Peak SNR
 subplot(2,5,6)
 
-histogram(peak_snr,100,'FaceColor',colors{1},'FaceAlpha',1)
+histogram(peak_snr,40,'FaceColor',colors{1},'FaceAlpha',1)
 xlim([0 max(peak_snr)])
 
 title(sprintf('Peak SNR: \\mu:%.2f \\sigma:%.2f',mean(peak_snr),std(peak_snr)))
@@ -235,7 +217,7 @@ set(gca,'FontSize',13)
 % Plot: Waveform Mean SNR
 subplot(2,5,7)
 
-histogram(mean_snr,100,'FaceColor',colors{1},'FaceAlpha',1)
+histogram(mean_snr,40,'FaceColor',colors{1},'FaceAlpha',1)
 xlim([0 max(mean_snr)])
 
 title(sprintf('Mean SNR: \\mu:%.2f \\sigma:%.2f',mean(mean_snr),std(mean_snr)))
@@ -245,8 +227,8 @@ set(gca,'FontSize',13)
 
 % Plot: Pairwise Distance (Projection Test)
 subplot(2,5,8)
-proj_dist_plot = nonzeros(proj_dist); proj_dist_plot = proj_dist_plot(~isnan(proj_dist_plot));
-histogram(proj_dist_plot,100,'FaceColor',colors{1},'FaceAlpha',1)
+proj_dist_plot = nonzeros(proj_dist);
+histogram(proj_dist_plot,40,'FaceColor',colors{1},'FaceAlpha',1)
 xlim([0 50])
 
 title(sprintf('Mean Proj: \\mu:%.2f \\sigma:%.2f',mean(proj_dist_plot),std(proj_dist_plot)))
@@ -259,7 +241,7 @@ ylabel('nr Units')
 subplot(2,5,9)
 iso_dist_log10 = log10(iso_dist);
 iso_plot = iso_dist_log10;
-histogram(iso_plot,100,'FaceColor',colors{1},'FaceAlpha',1)
+histogram(iso_plot,30,'FaceColor',colors{1},'FaceAlpha',1)
 xlim([0 4])
 title(sprintf('Iso Dist: \\mu:%.2f \\sigma:%.2f',mean(iso_plot),std(iso_plot)))
 

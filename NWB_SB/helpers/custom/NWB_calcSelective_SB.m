@@ -3,7 +3,7 @@ function [sig_cells,areasSternberg] = NWB_calcSelective_SB(nwbAll, all_units, pa
 %selectivity tests for the sternberg task. Optionally plots trial aligned
 %spikes
 
-if isfield(params,'rateFilter') && ~isempty(params.rateFilter) && params.rateFilter > 0
+if isfield(params,'rateFilter') && params.rateFilter > 0
     rateFilter = params.rateFilter;
 else
     rateFilter = [];
@@ -24,7 +24,7 @@ all_units = all_units(logical(aboveRate));
 
 
 areasSternberg = cell(length(all_units),1);
-concept_cells_sb = zeros(length(all_units),1); 
+concept_cells_sb = zeros(length(all_units),1); alphaLim = 0.05;
 hzPref = zeros(length(all_units),1);
 hzNonPref = zeros(length(all_units),1);
 maint_cells_sb = zeros(length(all_units),1);
@@ -33,13 +33,11 @@ probe_cells_sb = zeros(length(all_units),1);
 for i = 1:length(all_units) 
     SU = all_units(i);
     subject_id = SU.subject_id;
-    session_id = SU.session_id;
-    identifier = SU.identifier;
     cellID = SU.unit_id;
     brain_area = nwbAll{SU.session_count}.general_extracellular_ephys_electrodes.vectordata.get('location').data.load(SU.electrodes);
     clusterID = nwbAll{SU.session_count}.units.vectordata.get('clusterID_orig').data.load(SU.unit_id);
     areasSternberg{i} = brain_area{:};
-    fprintf('Processing: (%d/%d) sub-%s-ses-%s, Unit %d Cluster %d ',i,length(all_units),subject_id,session_id,cellID,clusterID)
+    fprintf('Processing: (%d/%d) Session SBID %d, Unit %d, Cluster %d ',i,length(all_units),subject_id,cellID,clusterID)
     
     % Loading stim timestamps and loads
     tsFix = num2cell(nwbAll{SU.session_count}.intervals_trials.vectordata.get('timestamps_FixationCross').data.load());
@@ -48,120 +46,176 @@ for i = 1:length(all_units)
     tsEnc3 = num2cell(nwbAll{SU.session_count}.intervals_trials.vectordata.get('timestamps_Encoding3').data.load());
     tsMaint = num2cell(nwbAll{SU.session_count}.intervals_trials.vectordata.get('timestamps_Maintenance').data.load());
     tsProbe = num2cell(nwbAll{SU.session_count}.intervals_trials.vectordata.get('timestamps_Probe').data.load());
-    ID_Enc1 = num2cell(nwbAll{SU.session_count}.intervals_trials.vectordata.get('PicIDs_Encoding1').data.load());
-    ID_Enc2 = num2cell(nwbAll{SU.session_count}.intervals_trials.vectordata.get('PicIDs_Encoding2').data.load());
-    ID_Enc3 = num2cell(nwbAll{SU.session_count}.intervals_trials.vectordata.get('PicIDs_Encoding3').data.load());
-    ID_Probe = num2cell(nwbAll{SU.session_count}.intervals_trials.vectordata.get('PicIDs_Probe').data.load());
-    
-    % Deriving CAT classifers (should be in range of 1-5 and 9
-    CAT_Enc1 = cellfun(@(x) num2str(x),ID_Enc1,'UniformOutput',false); CAT_Enc1 = cellfun(@(x) str2double(x(1)),CAT_Enc1,'UniformOutput',false);
-    CAT_Enc2 = cellfun(@(x) num2str(x),ID_Enc2,'UniformOutput',false); CAT_Enc2 = cellfun(@(x) str2double(x(1)),CAT_Enc2,'UniformOutput',false);
-    CAT_Enc3 = cellfun(@(x) num2str(x),ID_Enc3,'UniformOutput',false); CAT_Enc3 = cellfun(@(x) str2double(x(1)),CAT_Enc3,'UniformOutput',false);
-    CAT_Probe = cellfun(@(x) num2str(x),ID_Probe,'UniformOutput',false); CAT_Probe = cellfun(@(x) str2double(x(1)),CAT_Probe,'UniformOutput',false);
+    ID_Enc1 = num2cell(nwbAll{SU.session_count}.intervals_trials.vectordata.get('loadsEnc1_PicIDs').data.load());
+    ID_Enc2 = num2cell(nwbAll{SU.session_count}.intervals_trials.vectordata.get('loadsEnc2_PicIDs').data.load());
+    ID_Enc3 = num2cell(nwbAll{SU.session_count}.intervals_trials.vectordata.get('loadsEnc3_PicIDs').data.load());
+    ID_Probe = num2cell(nwbAll{SU.session_count}.intervals_trials.vectordata.get('loadsProbe_PicIDs').data.load());
 
     stim = cell2struct(...
         horzcat(tsFix,tsEnc1,tsEnc2,tsEnc3,tsMaint, tsProbe,...
-        ID_Enc1,ID_Enc2,ID_Enc3,ID_Probe,CAT_Enc1,CAT_Enc2,CAT_Enc3,CAT_Probe),...
+        ID_Enc1,ID_Enc2,ID_Enc3,ID_Probe),...
         {'tsFix','tsEnc1','tsEnc2','tsEnc3','tsMaint','tsProbe',...
-        'idEnc1','idEnc2','idEnc3','idProbe','CAT_Enc1','CAT_Enc2','CAT_Enc3','CAT_Probe'},2);
+        'idEnc1','idEnc2','idEnc3','idProbe'},2);
     
-    [idUnique, ~, ic] = unique([stim.CAT_Enc1]);    
+    [idUnique, ~, ic] = unique([stim.idEnc1]);    
     uniqueCounts = histcounts(ic,'BinMethod','integers');
     
-    %% Get all stimulus rates
+    HzEnc1 = NaN(length(stim),1);
     signalDelay = 0.2; % Delay of stimulus onset to effect. 
     stimOffset = 1; % Time past stimulus onset. End of picture presentation.
-    HzEnc1 = NaN(length(stim),1);
     for k = 1:length(HzEnc1)
         periodFilter = (SU.spike_times>(stim(k).tsEnc1+signalDelay)) & (SU.spike_times<(stim(k).tsEnc1+stimOffset));
         singleTrialSpikes = SU.spike_times(periodFilter);
         trialRate = length(singleTrialSpikes)/(stimOffset-signalDelay); % Firing rate across testing period.
         HzEnc1(k) = trialRate;
     end
-    nonZ_tsEnc2 = nonzeros([stim.tsEnc2]); nonZ_CAT_Enc2 = nonzeros([stim.CAT_Enc2]);
-    HzEnc2 = NaN(length(nonZ_tsEnc2),1);
-    for k = 1:length(HzEnc2)
-        periodFilter = (SU.spike_times>(nonZ_tsEnc2(k)+signalDelay)) & (SU.spike_times<(nonZ_tsEnc2(k)+stimOffset));
-        singleTrialSpikes = SU.spike_times(periodFilter);
-        trialRate = length(singleTrialSpikes)/(stimOffset-signalDelay); % Firing rate across testing period.
-        HzEnc2(k) = trialRate;
-    end
-    nonZ_tsEnc3 = nonzeros([stim.tsEnc3]); nonZ_CAT_Enc3 = nonzeros([stim.CAT_Enc3]);
-    HzEnc3 = NaN(length(nonZ_tsEnc3),1);
-    for k = 1:length(HzEnc3)
-        periodFilter = (SU.spike_times>(nonZ_tsEnc3(k)+signalDelay)) & (SU.spike_times<(nonZ_tsEnc3(k)+stimOffset));
-        singleTrialSpikes = SU.spike_times(periodFilter);
-        trialRate = length(singleTrialSpikes)/(stimOffset-signalDelay); % Firing rate across testing period.
-        HzEnc3(k) = trialRate;
-    end
-    nonZ_tsProbe = nonzeros([stim.tsProbe]); nonZ_CAT_Probe = nonzeros([stim.CAT_Probe]);
-    HzProbe = NaN(length(nonZ_tsProbe),1);
-    for k = 1:length(HzProbe)
-        periodFilter = (SU.spike_times>(nonZ_tsProbe(k)+signalDelay)) & (SU.spike_times<(nonZ_tsProbe(k)+stimOffset));
-        singleTrialSpikes = SU.spike_times(periodFilter);
-        trialRate = length(singleTrialSpikes)/(stimOffset-signalDelay); % Firing rate across testing period.
-        HzProbe(k) = trialRate;
-    end
-
-    %% Compile Stimulus Rates
-    Hz_allTrials = [HzEnc1;HzEnc2;HzEnc3;HzProbe];
-    CAT_allTrials = [[stim.CAT_Enc1]';nonZ_CAT_Enc2;nonZ_CAT_Enc3;nonZ_CAT_Probe];
-
+    
     % Finding image with maximum response. Used in stage 2 test. 
-    nUniqueStim = length(unique(CAT_allTrials));
+    nUniqueStim = length(unique([stim.idEnc1]));
     mResp=nan(nUniqueStim,1);
     for k=1:nUniqueStim
-        mResp(k) = mean(Hz_allTrials(CAT_allTrials==k));
+        mResp(k) = mean(HzEnc1([stim.idEnc1]==k));
     end
     idMaxHz = find(mResp==max(mResp),1);
-    id_Trial_maxOnly = CAT_allTrials; id_Trial_maxOnly(CAT_allTrials~=idMaxHz) = 0;
+    id_Trial_maxOnly = [stim.idEnc1]; id_Trial_maxOnly([stim.idEnc1]~=idMaxHz) = -1;
     
-    %% Significance Tests: Category Cells
-    % Count spikes in 200-1000ms window following all stimuli onsets (Enc1,
-    % Enc2, Enc3, & Probe)
+    %% Significance Tests: Concept Cells
+    % Count spikes in 200-1000ms window following stimulus onset
     % following the first encoding period. Use a 1-way ANOVA followed by a
     % t-test of the maximal response versus the non-selective responses.
     % Note that using a 1-way anova with two groups simplifies to a t-test
-    alphaLim = 0.05;
-    % sig_method = 'parametric';
-    sig_method = 'non-parametric';
-    if strcmp(sig_method,'parametric')
-        p_ANOVA = 1; p_bANOVA = 1;%#ok<NASGU> % Preset as '1' to allow for paramsSB.plotAlways.
-        p_ANOVA = anovan(Hz_allTrials,{string(CAT_allTrials)}, 'display','off','model', 'linear','alpha',alphaLim,'varnames','picID');
-        if p_ANOVA < alphaLim % First test: 1-way ANOVA
-            p_bANOVA = anovan(Hz_allTrials,{string(id_Trial_maxOnly)}, 'display','off','model', 'linear','alpha',alphaLim,'varnames','picID');
-            if p_bANOVA < alphaLim % Second Test: Binarized 1-way ANOVA (simplifies to t-test)
-            fprintf('| Category -> sub-%s-ses-%s, Unit %d p1:%.2f p2:%.2f',SU.subject_id,SU.session_id,SU.unit_id,p_ANOVA,p_bANOVA)
-            concept_cells_sb(i) = 1;
-            end
+    p_ANOVA = 1; p_bANOVA = 1;%#ok<NASGU> % Preset as '1' to allow for paramsSB.plotAlways.
+    p_ANOVA = anovan(HzEnc1,{string([stim.idEnc1])}, 'display','off','model', 'linear','alpha',alphaLim,'varnames','picID');
+    if p_ANOVA < alphaLim % First test: 1-way ANOVA
+        p_bANOVA = anovan(HzEnc1,{string(id_Trial_maxOnly)}, 'display','off','model', 'linear','alpha',alphaLim,'varnames','picID');
+        if p_bANOVA < alphaLim % Second Test: Binarized 1-way ANOVA (simplifies to t-test)
+        fprintf('| Concept -> SID %d, Unit %d p1:%.2f p2:%.2f',SU.subject_id,SU.unit_id,p_ANOVA,p_bANOVA)
+        concept_cells_sb(i) = 1;
         end
-    elseif strcmp(sig_method,'non-parametric')
-        p_ANOVA = 1; p_bANOVA = 1;%#ok<NASGU> % Preset as '1' to allow for paramsSB.plotAlways.
-        groups = cellstr(string(CAT_allTrials));
-        p_ANOVA = randanova1(Hz_allTrials,groups, 2000);
-        if p_ANOVA < alphaLim % First test: 1-way ANOVA            
-            a = Hz_allTrials(CAT_allTrials==idMaxHz); b = Hz_allTrials(CAT_allTrials~=idMaxHz); 
-            p_perm = permutationTest(a,b,2000,'sidedness','larger');
-            if p_perm < alphaLim % Second Test: Binarized 1-way ANOVA (simplifies to t-test)
-            fprintf('| Category -> sub-%s-ses-%s, Unit %d p1:%.2f p2:%.2f',SU.subject_id,SU.session_id,SU.unit_id,p_ANOVA,p_perm)
-            concept_cells_sb(i) = 1;
-            end
-            p_bANOVA = p_perm; % For var references later in the script.
-        end      
-    else
-        error('Significance method not specified')
+    end
+    % Saving rate data for additional tests between pref/non-pref trials
+    hzPref(i) = mean(HzEnc1(logical(id_Trial_maxOnly)));
+    hzNonPref(i) = mean(HzEnc1(~logical(id_Trial_maxOnly)));
+
+    %% Significance Tests: Maintenance Cells
+    % Perform a t-test between the mean firing rate during the maintenance
+    % period and baseline period (fixation cross). If the cell was
+    % idenfified as a concept cell, the maintenance activity of
+    % non-selective images must be higher than the fixation baseline as
+    % well.
+    HzMaint = NaN(length(stim),1);
+    maintDelay = 0; % Delay of maint onset to effect. 
+    maintOffset = 2.5; % Time past maint onset. End of picture presentation.
+    for k = 1:length(HzMaint)
+        periodFilter = (SU.spike_times>(stim(k).tsMaint+maintDelay)) & (SU.spike_times<(stim(k).tsMaint+maintOffset));
+        singleTrialSpikes = SU.spike_times(periodFilter);
+        trialRate = length(singleTrialSpikes)/(maintOffset-maintDelay); % Firing rate across testing period.
+        HzMaint(k) = trialRate;
+    end
+    HzFix = NaN(length(stim),1);
+    fixDelay = 0; % Delay of fix onset to effect. 
+    fixOffset = 0.5; % Time past fixation onset. End of picture presentation.
+    for k = 1:length(HzFix)
+        periodFilter = (SU.spike_times>(stim(k).tsFix+fixDelay)) & (SU.spike_times<(stim(k).tsFix+fixOffset));
+        singleTrialSpikes = SU.spike_times(periodFilter);
+        trialRate = length(singleTrialSpikes)/(fixOffset-fixDelay); % Firing rate across testing period.
+        HzFix(k) = trialRate;
+    end
+    % % Performing paired t-test
+    sidedness = 'right';
+    [detect_maint, p_maint] = ttest(HzMaint,HzFix,'Tail',sidedness,'Alpha',alphaLim);
+    if detect_maint && concept_cells_sb(i) % If the maint cell was previously marked as a concept cell
+        non_selective_trials = ~id_Trial_maxOnly;
+        [maint_cells_sb(i),p2_maint] = ttest(HzMaint(non_selective_trials),HzFix(non_selective_trials),'Tail',sidedness,'Alpha',alphaLim);
+        if maint_cells_sb(i)
+            fprintf('| Maint -> M:%.2fHz F:%.2fHz p:%.2f, p2:%.2f ',mean(HzMaint),mean(HzFix),p_maint,p2_maint)
+        end
+    elseif detect_maint && ~concept_cells_sb(i) % for pure maint cells. 
+        maint_cells_sb(i) = 1;
+        fprintf('| Maint -> M:%.2fHz F:%.2fHz p:%.2f ',mean(HzMaint),mean(HzFix),p_maint)
+    end
+    
+    % % ALT METRIC: Permutation Test (Yields similar results)
+    % permutations = 2000;
+    % sidedness = 'larger'; % 'smaller': s1<s2; 'larger': s1>s2
+    % [p_maint, ~, ~] = permutationTest(HzMaint,HzFix, permutations, 'sidedness', sidedness);
+    % if p_maint < alphaLim && concept_cells_sb(i) % If the maint cell was previously marked as a concept cell
+    %     non_selective_trials = ~id_Trial_maxOnly;
+    %     [p2_maint,~,~] = permutationTest(HzMaint(non_selective_trials),HzFix(non_selective_trials), permutations, 'sidedness',sidedness);
+    %     if p2_maint < alphaLim
+    %         fprintf('| Maint -> M:%.2fHz F:%.2fHz p:%.2f, p2:%.2f ',mean(HzMaint),mean(HzFix),p_maint,p2_maint)
+    %         maint_cells_sb(i) = 1;
+    %     end
+    % elseif p_maint < alphaLim && ~concept_cells_sb(i) % for pure maint cells. 
+    %     maint_cells_sb(i) = 1;
+    %     fprintf('| Maint -> M:%.2fHz F:%.2fHz p:%.2f ',mean(HzMaint),mean(HzFix),p_maint)
+    % end
+
+
+    %% Significance Tests: Probe Cells
+    % Perform a t-test between the firing rates in the probe period and the
+    % maint/enc periods. 
+    HzProbe = NaN(length(stim),1);
+    probeDelay = .2; % Delay of probe onset to effect. 
+    probeOffset = 1; % Time past probe onset. End of picture presentation.
+    for k = 1:length(HzProbe)
+        periodFilter = (SU.spike_times>(stim(k).tsProbe+probeDelay)) & (SU.spike_times<(stim(k).tsProbe+probeOffset));
+        singleTrialSpikes = SU.spike_times(periodFilter);
+        trialRate = length(singleTrialSpikes)/(probeOffset-probeDelay); % Firing rate across testing period.
+        HzProbe(k) = trialRate;
+    end
+    
+    % Appending Enc/Maint periods for each trial.
+    HzEnc = NaN(length(stim),1);
+    encDelay = 0.2;
+    encOffset = 1;
+    % maintDelay = 0; % Delay of maint onset to effect. 
+    % maintOffset = 2.5; % Time past maint onset. End of picture presentation.
+    for k = 1:length(HzEnc)
+        trialSpikeCounts = 0; totalTime = 0;
+        % Enc 1
+        periodFilter = (SU.spike_times>(stim(k).tsEnc1+encDelay)) & (SU.spike_times<(stim(k).tsEnc1+encOffset));
+        singleTrialSpikes = SU.spike_times(periodFilter);
+        trialSpikeCounts = trialSpikeCounts + length(singleTrialSpikes);
+        totalTime = totalTime + (encOffset-encDelay);
+        if stim(k).tsEnc2 > 0 % Enc 2
+            periodFilter = (SU.spike_times>(stim(k).tsEnc2+encDelay)) & (SU.spike_times<(stim(k).tsEnc2+encOffset));
+            singleTrialSpikes = SU.spike_times(periodFilter);
+            trialSpikeCounts = trialSpikeCounts + length(singleTrialSpikes);
+            totalTime = totalTime + (encOffset-encDelay);
+        end
+        if stim(k).tsEnc3 > 0 % Enc 3
+            periodFilter = (SU.spike_times>(stim(k).tsEnc2+encDelay)) & (SU.spike_times<(stim(k).tsEnc2+encOffset));
+            singleTrialSpikes = SU.spike_times(periodFilter);
+            trialSpikeCounts = trialSpikeCounts + length(singleTrialSpikes);
+            totalTime = totalTime + (encOffset-encDelay);
+        end
+        % % Maint (Deprecated, t-test calculated separately)
+        % periodFilter = (SU.spike_times>(stim(k).tsMaint+maintDelay)) & (SU.spike_times<(stim(k).tsEnc2+maintOffset));
+        % singleTrialSpikes = SU.spike_times(periodFilter);
+        % trialSpikeCounts = trialSpikeCounts + length(singleTrialSpikes); 
+        % totalTime = totalTime + (maintOffset-maintDelay);
+       
+        % Calculating Total Rate per trial
+        trialRate = trialSpikeCounts/totalTime; % Firing rate across testing period.
+        HzEnc(k) = trialRate;
     end
 
+        
+    % Performing paired one-tailed t-test
+    [detect_probe1, p_probe1] = ttest(HzProbe,HzEnc,'Tail','right','Alpha',alphaLim);
+    [detect_probe2, p_probe2] = ttest(HzProbe,HzMaint,'Tail','right','Alpha',alphaLim);
+    if detect_probe1 && detect_probe2
+        fprintf('| Probe -> P:%.2fHz E:%.2fHz M:%.2fHz p:%.2f p2:%.2f ',mean(HzProbe),mean(HzEnc),mean(HzMaint),p_probe1,p_probe2)
+        probe_cells_sb(i) = 1;
+    end
 
-    % Saving rate data for additional tests between pref/non-pref trials
-    hzPref(i) = mean(Hz_allTrials(logical(id_Trial_maxOnly)));
-    hzNonPref(i) = mean(Hz_allTrials(~logical(id_Trial_maxOnly)));
-
+    
 
     %% Rasters, PSTH, & Selective Image
     % Flagging significant cells for plotting
     switch params.plotMode
-        case 1 % Category
+        case 1 % Concept
             plotFlag = params.doPlot && concept_cells_sb(i);
         case 2 % Maint
             plotFlag = params.doPlot && maint_cells_sb(i);
@@ -170,7 +224,7 @@ for i = 1:length(all_units)
         case 4 % All
             plotFlag = params.doPlot && (concept_cells_sb(i) || maint_cells_sb(i) || probe_cells_sb(i));
         otherwise
-            warning('Plot mode not specified. Defaulting to category cells.\n')
+            warning('Plot mode not specified. Defaulting to concept cells.\n')
             in = input('Continue? (y/n)\n',"s");
             if any(strcmp(in,["Y","y"]))
                 plotFlag = params.doPlot && concept_cells_sb(i);
@@ -178,7 +232,7 @@ for i = 1:length(all_units)
                 fprintf('Aborting.\n')
                 return
             else
-                fprintf('Answer not specified. Aborting.\n')
+                fprintf('Input not specified. Aborting.\n')
                 return
             end
     end
@@ -219,7 +273,7 @@ for i = 1:length(all_units)
         StimBaselineMaint = .5;  % before maintenance onset
         StimBaselineProbe = .5; % before probe onset
         % t after stim onset (In Seconds)
-        StimOnTimeEnc  = 2; % after for all encodings
+        StimOnTimeEnc  = 1; % after for all encodings
         StimOnTimeMaint = 2.5; % after maintenance onset
         StimOnTimeProbe = 2; % after probe onset
 
@@ -243,12 +297,13 @@ for i = 1:length(all_units)
         periods.Probe = NWB_determineSBPeriods( nonzeros([stim.tsProbe]), period_StimBaselineProbe, period_StimOnTimeProbe );
         
         
+
         figNum = i;
         currentFigure = figure(figNum);
         currentFigure.set('Name', plabelStr)
         %% === Encoding 1 == Plot Raster and PSTH
         offsets = 0; % Spike times offset
-        indsPref = [stim.CAT_Enc1]==idMaxHz; indsNonPref = ~indsPref;
+        indsPref = [stim.idEnc1]==idMaxHz; indsNonPref = ~indsPref;
         indsPref = find(indsPref); indsNonPref = find(indsNonPref);
 
         limitRange_forRaster = [ 0 StimBaselineEnc+StimOnTimeEnc + 2*padding ]; 
@@ -277,16 +332,16 @@ for i = 1:length(all_units)
             warning('more images then trial periods, missmatch?');
             indsEnc2_load2shown = indsEnc2_load2shown(1:size(periods.Enc2,1));
         end
-        PicOrder_Enc2_shownOnly_inEnc2 = cell2mat(CAT_Enc2(indsEnc2_load2shown));    % order of images shown during Enc2, onlly those shown in Enc2    
-        PicOrder_Enc1_shownOnly_inEnc2 = cell2mat(CAT_Enc1(indsEnc2_load2shown));
+        PicOrder_Enc2_shownOnly_inEnc2 = cell2mat(ID_Enc2(indsEnc2_load2shown));    % order of images shown during Enc2, onlly those shown in Enc2    
+        PicOrder_Enc1_shownOnly_inEnc2 = cell2mat(ID_Enc1(indsEnc2_load2shown));
 
         indsPref_Enc2 = find(PicOrder_Enc2_shownOnly_inEnc2==idMaxHz);
 
         indsNonPref_Enc2_NonPrefEnc1 = find(PicOrder_Enc2_shownOnly_inEnc2 ~=idMaxHz &  PicOrder_Enc1_shownOnly_inEnc2 ~= idMaxHz );   % pref not shown in Enc2, and not shown in Enc1
         indsNonPref_Enc2_PrefEnc1 = find(PicOrder_Enc2_shownOnly_inEnc2    ~=idMaxHz &   PicOrder_Enc1_shownOnly_inEnc2 == idMaxHz);   % pref not shown in Enc2, but was shown in Enc1
-        params_Enc2 = spikePlotParams; params_Enc2.colors = params_Enc2.colors([1 2]);
+        params_Enc2 = spikePlotParams; params_Enc2.colors = params_Enc2.colors([1 3 2]);
         [axRaster_Enc2,axPSTH_Enc2] = plotSpikeRaster_multiple_simplified( 3, offsets, limitRange_forRaster, limitRange_forPSTH, markerPos, ...
-            SU.spike_times, {periods.Enc2}, {indsPref_Enc2, sort([indsNonPref_Enc2_PrefEnc1;indsNonPref_Enc2_NonPrefEnc1]) }, {'Pref', 'NonPref'}, [2 6 8], [2 6 2], params_Enc2 );
+            SU.spike_times, {periods.Enc2}, {indsPref_Enc2, indsNonPref_Enc2_PrefEnc1, indsNonPref_Enc2_NonPrefEnc1 }, {'P_{Enc2 Only}', 'NP_{Enc2} P_{Enc1}','NP_{Enc2} NP_{Enc1}'}, [2 6 8], [2 6 2], params_Enc2 );
         title(['Enc2'])
         
   
@@ -298,9 +353,9 @@ for i = 1:length(all_units)
         
         indsEnc3_load3shown = find([ID_Enc3{:}] > 0);
         
-        PicOrder_Enc3_shownOnly_inEnc3 = cell2mat(CAT_Enc3(indsEnc3_load3shown));
-        PicOrder_Enc2_shownOnly_inEnc3 = cell2mat(CAT_Enc2(indsEnc3_load3shown));
-        PicOrder_Enc1_shownOnly_inEnc3 = cell2mat(CAT_Enc1(indsEnc3_load3shown));
+        PicOrder_Enc3_shownOnly_inEnc3 = cell2mat(ID_Enc3(indsEnc3_load3shown));
+        PicOrder_Enc2_shownOnly_inEnc3 = cell2mat(ID_Enc2(indsEnc3_load3shown));
+        PicOrder_Enc1_shownOnly_inEnc3 = cell2mat(ID_Enc1(indsEnc3_load3shown));
         
         indsPref_Enc3 = find(PicOrder_Enc3_shownOnly_inEnc3==idMaxHz);
         
@@ -308,9 +363,9 @@ for i = 1:length(all_units)
         
         indsNonPref_Enc3_PrefEnc2 = find(PicOrder_Enc3_shownOnly_inEnc3~=idMaxHz &  PicOrder_Enc2_shownOnly_inEnc3 == idMaxHz ); % pref not shown in Enc3, pref shown in Enc2
         indsNonPref_Enc3_PrefEnc1 = find(PicOrder_Enc3_shownOnly_inEnc3~=idMaxHz &  PicOrder_Enc1_shownOnly_inEnc3 == idMaxHz ); % pref not shown in Enc3, pref shown in Enc1
-        params_Enc3 = spikePlotParams; params_Enc3.colors = params_Enc3.colors([1 2]);
+        params_Enc3 = spikePlotParams; params_Enc3.colors = params_Enc3.colors([1 3 2]);
         [axRaster_Enc3,axPSTH_Enc3] = plotSpikeRaster_multiple_simplified( 3, offsets, limitRange_forRaster, limitRange_forPSTH, markerPos, ...
-            SU.spike_times, {periods.Enc3}, {indsPref_Enc3,[indsNonPref_Enc3_PrefEnc2; indsNonPref_Enc3_PrefEnc1;indsNonPref_Enc3_NonPrefEnc12] }, {'Pref','NonPref'}, [2 6 9], [2 6 3], params_Enc3 );
+            SU.spike_times, {periods.Enc3}, {indsPref_Enc3,[indsNonPref_Enc3_PrefEnc2; indsNonPref_Enc3_PrefEnc1],indsNonPref_Enc3_NonPrefEnc12 }, {'P','NP P_{E2} & NP P_{E1}','NP NP'}, [2 6 9], [2 6 3], params_Enc3 );
         title(['Enc3 ' ])
 
 
@@ -325,19 +380,22 @@ for i = 1:length(all_units)
         
         
         % Temp In-memory all
-        encFilter = (idMaxHz == [CAT_Enc1{:}]) + (idMaxHz == [CAT_Enc2{:}]) + (idMaxHz == [CAT_Enc3{:}]) > 0;
+        encFilter = (idMaxHz == [ID_Enc1{:}]) + (idMaxHz == [ID_Enc2{:}]) + (idMaxHz == [ID_Enc3{:}]) > 0;
         indsEnc = find(encFilter);
         indsNonEnc = find(~encFilter);
 
-        params_Maint = spikePlotParams; params_Maint.colors = params_Maint.colors([1 2]);
+        params_Maint = spikePlotParams; params_Maint.colors = params_Maint.colors([3 2]);
         [axRaster_Maint,axPSTH_Maint] = plotSpikeRaster_multiple_simplified( 3, offsets, limitRange_forRaster, limitRange_forPSTH, markerPos, ...
-            SU.spike_times, {periods.Maint}, {indsEnc,indsNonEnc}, {'Pref','NonPref'},   [2 6 10], [2 6 4], params_Maint );
+            SU.spike_times, {periods.Maint}, {indsEnc,indsNonEnc}, {'P_{Enc1-3}','NP'},   [2 6 10], [2 6 4], params_Maint );
 
+        % [axRaster_Maint,axPSTH_Maint] = plotSpikeRaster_multiple_simplified( 3, offsets, limitRange_forRaster, limitRange_forPSTH, markerPos, ...
+        %     SU.spike_times, {periods.Maint}, {indsNonPref,indsPref}, {'NP_{Enc1}','P_{Enc1}'}, [2 6 4],  [2 6 10],spikePlotParams );
         title(['Maint'])
+        % ylim([0 20])
 
         %% === Probe == Plot Raster and PSTH
         ProbeInOut = nwbAll{SU.session_count}.intervals_trials.vectordata.get('probe_in_out').data.load();
-        probeID_mat = cell2mat(CAT_Probe);
+        probeID_mat = cell2mat(ID_Probe);
         indsProbe_pref_inmem = find( probeID_mat == idMaxHz & ProbeInOut==1 );
         indsProbe_pref_outmem = find( probeID_mat == idMaxHz & ProbeInOut==0 );
         indsProbe_nonpref_inmem = find( probeID_mat ~= idMaxHz & ProbeInOut==1 );
@@ -350,25 +408,32 @@ for i = 1:length(all_units)
             StimBaselineProbe + 1 + padding, ...
             StimBaselineProbe + 2 + padding];
 
-        params_probe = spikePlotParams; params_probe.colors = params_probe.colors([1 2]);
+        params_probe = spikePlotParams; params_probe.colors = params_probe.colors([4 1 3 2]);
 
         [axRaster_Probe,axPSTH_Probe] = plotSpikeRaster_multiple_simplified( 3, offsets, limitRange_forRaster, limitRange_forPSTH, markerPos, ...
-            SU.spike_times, {periods.Probe}, {[indsProbe_pref_inmem;indsProbe_pref_outmem], [indsProbe_nonpref_inmem;indsProbe_nonpref_outmem]}, ...
-            { 'Pref', 'NonPref'},   [2 6 11], [2 6 5], params_probe ); 
+            SU.spike_times, {periods.Probe}, {indsProbe_pref_inmem, indsProbe_pref_outmem, indsProbe_nonpref_inmem,indsProbe_nonpref_outmem}, ...
+            { 'P in', 'P out','NP in','NP out'},   [2 6 11], [2 6 5], params_probe ); 
         title(['Probe ']);
         
 
         %% === Selective Image ===    
         indPrefImg = idUnique(find(idUnique==idMaxHz,1)); % Index in StimulusTemplates at which the preferred image occurs
-        % NOTE: Category not explicitly stated. Dependent on task version. 
-        catLabel = sprintf('Selective Category:\n%d',indPrefImg);
-
+        current_session = all_units(i).session_count;
+        StimulusTemplates = nwbAll{current_session}.stimulus_templates.get('StimulusTemplates') ;
+       
+        prefPathUnstripped = StimulusTemplates.order_of_images.data(indPrefImg).path; % Loading raw path
+        stripPrepPath = split(prefPathUnstripped,'/'); % Stripping fileseps
+        prefPath = stripPrepPath{end}; % Grabbing final entry
+        
+        prefImgload = StimulusTemplates.image.get(prefPath).data.load; % Loading using the key from order_of_images. 
+        prefImg = permute(prefImgload,[2,3,1]); % Permuting for matlab compatibility
+        
         subplot(2,6,6)
-        text(0.5,0.5,catLabel); axis off
+        image(prefImg);
         pbaspect([4 3 1])
         set(gca,'YTick',[])
         set(gca,'XTick',[])
-        % xlabel(strrep(prefPath,'_',' '))
+        xlabel(strrep(prefPath,'_',' '))
         
         %% Plotting Spike pdf
         subplot(2,6,12)
@@ -391,7 +456,7 @@ for i = 1:length(all_units)
         
         %% === Formatting Plot ===
         setCommonAxisRange( [axPSTH_Enc1 axPSTH_Enc2 axPSTH_Enc3 ,axPSTH_Maint,axPSTH_Probe], 2 );   % set common Y axis
-        % setCommonAxisRange( [axRaster_Enc1 axRaster_Enc2 axRaster_Enc3 ,axRaster_Maint,axRaster_Probe], 2 );   % set common Y axis
+        setCommonAxisRange( [axRaster_Enc1 axRaster_Enc2 axRaster_Enc3 ,axRaster_Maint,axRaster_Probe], 2 );   % set common Y axis
         fig = gcf;
         fig.OuterPosition = [0.25 0.25 1920 1080];
         fig.WindowState = 'maximized';
@@ -417,7 +482,7 @@ for i = 1:length(all_units)
             % Append selectivity to folder. Will store in separate folder
             % for each type. Allows for folders for overlapping cell types.
             if concept_cells_sb(i)
-                figPath = [figPath '_category']; %#ok<AGROW>
+                figPath = [figPath '_concept']; %#ok<AGROW>
             end
             if maint_cells_sb(i)
                 figPath = [figPath '_maint']; %#ok<AGROW>
@@ -429,7 +494,7 @@ for i = 1:length(all_units)
             if ~isfolder(figPath)
                 mkdir(figPath)
             end
-            fName = [identifier '_Cell_' num2str(cellID) '_Cl_' num2str(clusterID) '_BA_' brain_area{:}];
+            fName = ['SBID_' num2str(subject_id) '_Cell_' num2str(cellID) '_Cl_' num2str(clusterID) '_BA_' brain_area{:}];
             saveas(gcf, [figPath filesep fName '.' params.exportType ],params.exportType)
             fprintf('| Figure Saved')
             close(gcf);
@@ -437,12 +502,16 @@ for i = 1:length(all_units)
     end
     fprintf('\n') % New line for each cell
 end
-% Comparing category cells for preferred and non-preferred trials. 
+% Comparing concept cells for preferred and non-preferred trials. 
 hzPref_conceptOnly = hzPref(logical(concept_cells_sb));
 hzNonPref_conceptOnly = hzNonPref(logical(concept_cells_sb));
 [~, p_prefNonPref] = ttest(hzPref_conceptOnly,hzNonPref_conceptOnly,'Tail','right','Alpha',alphaLim);
+% p_prefNonPref = permutationTest(hzPref_conceptOnly,hzNonPref_conceptOnly,2000,'sidedness','larger');
 
-fprintf('Total Category Cells: %d/%d (%.2f%%)\n',sum(concept_cells_sb),length(all_units),sum(concept_cells_sb)/length(all_units)*100)
+fprintf('Total Concept: %d/%d (%.2f%%)\n',sum(concept_cells_sb),length(all_units),sum(concept_cells_sb)/length(all_units)*100)
+fprintf('Persistent Firing : Pref %.2f ± %.2f | Non-Pref %.2f ± %.2f | p = %.4f\n',mean(hzPref_conceptOnly),std(hzPref_conceptOnly),mean(hzNonPref_conceptOnly),std(hzNonPref_conceptOnly), p_prefNonPref )
+fprintf('Total Maint: %d/%d (%.2f%%)\n',sum(maint_cells_sb),length(all_units),sum(maint_cells_sb)/length(all_units)*100)
+fprintf('Total Probe: %d/%d (%.2f%%)\n',sum(probe_cells_sb),length(all_units),sum(probe_cells_sb)/length(all_units)*100)
 sig_cells.concept_cells = concept_cells_sb;
 sig_cells.hzPref = hzPref;
 sig_cells.hzNonPref = hzNonPref;
