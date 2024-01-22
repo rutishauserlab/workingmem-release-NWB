@@ -8,7 +8,9 @@
 
 This repository contains the code that accompanies our data release Kyzar et al. 'Dataset of human-single neuron activity during a Sternberg working memory task'. The purpose of the code in this repository is to provide examples of how to use the released data. This dataset is formatted in the [Neurodata Without Borders (NWB)](https://www.nwb.org/) format, which can easily be accessed from both MATLAB and Python as described [here](https://nwb-schema.readthedocs.io/en/latest/index.html). 
 
-This code accompanies the following data descriptor: [Citation Pending]. [Link to Paper (Pending)](https://youtu.be/MOu4_wpy40U) 
+This code accompanies the following data descriptor: 
+* Kyzar M, Kamiński J, Brzezicka A, Reed CM, Chung JM, Mamelak AN, Rutishauser U. Dataset of human-single neuron activity during a Sternberg working memory task. Sci Data. 2024 Jan 18;11(1):89. doi: 10.1038/s41597-024-02943-8. PMID: 38238342; PMCID: PMC10796636.
+  [Link to Paper](https://pubmed.ncbi.nlm.nih.gov/38238342/)
 
 The papers that describe the scientific results that are based on this dataset are:
 * Kamiński, J. et al. Persistently active neurons in human medial frontal and medial temporal lobe support working memory. Nature Neuroscience 20, 590-601 (2017). https://doi.org:10.1038/nn.4509
@@ -90,7 +92,7 @@ Please make sure to thoroughly read the comments in the code to understand the f
 * [Michael Kyzar](mailto:kyzarnexus@gmail.com)
 * [Ueli Rutishauser](mailto:Ueli.Rutishauser@cshs.org) (Principal Investigator)
 
->[[Citation Pending](https://youtu.be/MOu4_wpy40U)]
+>[Kyzar M, Kamiński J, Brzezicka A, Reed CM, Chung JM, Mamelak AN, Rutishauser U. Dataset of human-single neuron activity during a Sternberg working memory task. Sci Data. 2024 Jan 18;11(1):89. doi: 10.1038/s41597-024-02943-8. PMID: 38238342; PMCID: PMC10796636.](https://www.nature.com/articles/s41597-024-02943-8)
 
 ## Funding
 
